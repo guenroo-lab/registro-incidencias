@@ -291,6 +291,31 @@ body.modal-abierto{overflow:hidden}
 .toast.ok{background:#14935a;color:#fff}
 .toast span{flex:1}
 
+/* ——— más de 8 horas sin devolver ——— */
+.chip.exceso{background:#8f0f1f;color:#fff}
+.cuadro.exceso{position:relative;background:linear-gradient(180deg,#9b1022 0%,#4d0711 100%);border-color:#ff4d5e;color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 8px 22px -8px rgba(229,50,45,.75)}
+.cuadro.exceso::after{content:'';position:absolute;inset:0;border-radius:inherit;border:3px solid #ff6b78;pointer-events:none;animation:pulsoExceso 1.8s ease-in-out infinite}
+.cuadro.exceso .cuadro-nom{color:#fff}
+.cuadro-exceso{display:inline-flex;align-items:center;gap:4px;background:#fff;color:#8f0f1f;font-size:12px;font-weight:900;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.cuadro-exceso svg.i{width:13px;height:13px;vertical-align:-2px}
+@keyframes pulsoExceso{0%,100%{opacity:.25}50%{opacity:1}}
+.banner-exceso{display:flex;align-items:center;gap:10px;width:100%;text-align:left;margin:0 0 12px;padding:12px 14px;border-radius:16px;border:2px solid #ff4d5e;background:linear-gradient(180deg,#9b1022 0%,#5a0814 100%);color:#fff;font-family:inherit;font-size:14px;font-weight:800;line-height:1.35;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.banner-exceso svg.i{width:26px;height:26px;flex:none}
+.banner-exceso:active{transform:scale(.985)}
+.banner-exceso .ver{margin-left:auto;flex:none;font-size:12px;text-decoration:underline;white-space:nowrap}
+.kmodal-exceso{border:3px solid #ff4d5e;box-shadow:0 0 0 6px rgba(255,77,94,.28),0 24px 60px -20px rgba(0,0,0,.7)}
+.kmodal-exceso .exceso-cab{display:flex;flex-direction:column;align-items:center;gap:8px;margin:-18px -18px 14px;padding:22px 18px 16px;background:linear-gradient(180deg,#b3132a 0%,#6b0a18 100%);color:#fff;text-align:center;border-radius:calc(var(--radius-card) - 4px) calc(var(--radius-card) - 4px) 0 0}
+.kmodal-exceso .exceso-cab svg.i{width:60px;height:60px;stroke-width:1.8;animation:pulsoIcono 1.4s ease-in-out infinite}
+.kmodal-exceso .exceso-cab h3{font-size:23px;line-height:1.15;margin:0;color:#fff}
+.kmodal-exceso .exceso-cab p{margin:0;font-size:13.5px;font-weight:700;color:#ffe3e6}
+@keyframes pulsoIcono{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.exceso-item{border:2px solid #ff4d5e;background:rgba(229,50,45,.1);border-radius:16px;padding:12px 14px;margin:0 0 10px}
+.exceso-quien{font-size:21px;font-weight:900;line-height:1.15}
+.exceso-disp{font-size:15px;font-weight:800;margin-top:2px;overflow-wrap:anywhere}
+.exceso-tiempo{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:15px;font-weight:900;color:#ff6b78}
+.exceso-tiempo svg.i{width:18px;height:18px}
+.kmodal-exceso .fila-botones>.btn{min-height:56px;font-size:16px}
+
 /* ——— cartel grande de 2 s al coger una máquina / soltar un móvil ——— */
 .cartel{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,8,12,.74);cursor:pointer;-webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .25s}
 .cartel.sale{opacity:0}
@@ -511,6 +536,7 @@ body.modal-abierto{overflow:hidden}
         S.pin = v; S.pinTs = Date.now();
         mm.cerrar(); pintarTabs();
         if (despues) despues();
+        revisarExcesos();
       }).catch(function (e) { enviando = false; mm.ocupar(false); if (!silencio(e)) mm.error(msgError(e)); });
     }
     var modal = abrirModal({
@@ -579,14 +605,14 @@ body.modal-abierto{overflow:hidden}
       b.el = btn;
       return btn;
     });
-    var caja = h('div', { class: 'kmodal' + (o.largo ? ' kmodal-largo' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': o.titulo, tabindex: '-1' }, [
-      h('h3', { text: o.titulo }),
-      o.sub ? h('p', { class: 'sub-modal', text: o.sub }) : null,
+    var caja = h('div', { class: 'kmodal' + (o.largo ? ' kmodal-largo' : '') + (o.clase ? ' ' + o.clase : ''), role: o.obligatorio ? 'alertdialog' : 'dialog', 'aria-modal': 'true', 'aria-label': o.titulo, tabindex: '-1' }, [
+      o.cabecera ? o.cabecera : h('h3', { text: o.titulo }),
+      o.cabecera ? null : (o.sub ? h('p', { class: 'sub-modal', text: o.sub }) : null),
       o.cuerpo || null,
       h('div', { class: 'error-modal oculto', id: 'modalError', role: 'alert' }),
       botones.length ? h('div', { class: 'fila-botones' }, botones) : null
     ]);
-    var fondo = h('div', { class: 'kback', onmousedown: function (ev) { if (ev.target === fondo && !ctl.ocupado) ctl.cerrar(); } }, [caja]);
+    var fondo = h('div', { class: 'kback', onmousedown: function (ev) { if (ev.target === fondo && !ctl.ocupado && !o.obligatorio) ctl.cerrar(); } }, [caja]);
     var previo = document.activeElement;
     var ctl = {
       el: caja, botones: o.botones || [], ocupado: false,
@@ -603,7 +629,7 @@ body.modal-abierto{overflow:hidden}
         if (previo && previo.focus) { try { previo.focus(); } catch (e) {} }
       }
     };
-    function tecla(ev) { if (ev.key === 'Escape' && !ctl.ocupado) { ev.stopPropagation(); ctl.cerrar(); } }
+    function tecla(ev) { if (ev.key === 'Escape' && !ctl.ocupado) { ev.stopPropagation(); if (!o.obligatorio) ctl.cerrar(); } }
     document.addEventListener('keydown', tecla, true);
     document.body.appendChild(fondo);
     document.body.classList.add('modal-abierto');
@@ -613,6 +639,63 @@ body.modal-abierto{overflow:hidden}
     return ctl;
   }
   function cerrarModal() { if (S.modal) S.modal.cerrar(); }
+
+  // ── Más de 8 horas con el mismo dispositivo o máquina ─────────────────────
+  // Aviso llamativo en los cuadros y en Ahora para todos, y lectura obligatoria (hay que pulsar «Enterado») para los jefes
+  // (con el PIN puesto) y para quien lo tiene. Cada «Enterado» vale 4 horas por dispositivo y toma de posesión.
+  var LIMITE_H = 8, LIMITE_MS = LIMITE_H * 3600000, RELEER_MS = 4 * 3600000;
+  function excesos() {
+    var t = ahora();
+    return ((S.est && S.est.dispositivos) || []).filter(function (d) { return d.activo && d.tiene && d.desde; })
+      .map(function (d) { var desde = new Date(d.desde).getTime(); return { d: d, desde: desde, ms: t - desde }; })
+      .filter(function (x) { return x.ms >= LIMITE_MS; })
+      .sort(function (a, b) { return b.ms - a.ms; });
+  }
+  function leidosExceso() { try { var j = JSON.parse(lsGet('rd_excesos') || '{}'); return j && typeof j === 'object' ? j : {}; } catch (e) { return {}; } }
+  function claveExceso(x) { return x.d.id + '|' + x.d.desde; }
+  function tituloExceso(items) {
+    return items.length === 1 ? 'Más de ' + LIMITE_H + ' horas sin devolver' : items.length + ' llevan más de ' + LIMITE_H + ' horas sin devolver';
+  }
+  function mostrarExcesos(items, o) {
+    o = o || {};
+    var cab = h('div', { class: 'exceso-cab' }, [ic('alerta'), h('h3', { text: tituloExceso(items) }),
+      h('p', { text: o.propio ? 'Devuélvelo en cuanto puedas: otra persona puede necesitarlo.' : 'Habla con quien lo tiene y asegúrate de que lo devuelve.' })]);
+    var cuerpo = h('div', { class: 'exceso-lista' }, items.map(function (x) {
+      return h('div', { class: 'exceso-item' }, [
+        h('div', { class: 'exceso-quien', text: x.d.tiene }),
+        h('div', { class: 'exceso-disp', text: x.d.nombre }),
+        h('div', { class: 'exceso-tiempo' }, [ic('reloj'), 'Lleva ' + duracion(x.ms) + ' · desde ' + cuando(x.desde)])
+      ]);
+    }));
+    abrirModal({
+      titulo: tituloExceso(items), cabecera: cab, clase: 'kmodal-exceso', largo: true, obligatorio: !o.voluntario, cuerpo: cuerpo,
+      botones: [{
+        texto: o.voluntario ? 'Cerrar' : 'Enterado', icono: 'check', clase: o.voluntario ? 'borde' : '',
+        accion: function (m) {
+          if (!o.voluntario) {
+            var l = leidosExceso(), ahoraMs = Date.now(), nuevo = {};
+            Object.keys(l).forEach(function (k) { if (ahoraMs - l[k] < RELEER_MS) nuevo[k] = l[k]; });
+            items.forEach(function (x) { nuevo[claveExceso(x)] = ahoraMs; });
+            lsSet('rd_excesos', JSON.stringify(nuevo));
+          }
+          m.cerrar();
+        }
+      }],
+      enfoque: function () { return cuerpo; }
+    });
+  }
+  function revisarExcesos() {
+    if (!S.clave || !S.est) return;
+    if (document.querySelector('.cartel')) { setTimeout(revisarExcesos, CARTEL_MS + 150); return; }
+    if (S.modal) return;
+    var todos = excesos();
+    if (!todos.length) return;
+    var jefe = desbloqueado();
+    var mios = jefe ? todos : todos.filter(function (x) { return S.yo && norm(x.d.tiene) === norm(S.yo); });
+    var l = leidosExceso(), ahoraMs = Date.now();
+    var pend = mios.filter(function (x) { var t = l[claveExceso(x)]; return !(t && ahoraMs - t < RELEER_MS); });
+    if (pend.length) mostrarExcesos(pend, { propio: !jefe });
+  }
 
   function confirmarModal(titulo, texto, textoOk, peligro) {
     return new Promise(function (res) {
@@ -729,6 +812,7 @@ body.modal-abierto{overflow:hidden}
   function pintarTodo() {
     if (!S.clave) return;
     pintarCabecera(); pintarTabs(); pintarVista(false);
+    revisarExcesos();
   }
 
   function pintarVista(forzar) {
@@ -806,6 +890,14 @@ body.modal-abierto{overflow:hidden}
         h('span', { text: conAviso.length + (conAviso.length === 1 ? ' dispositivo con aviso: ' : ' dispositivos con aviso: ') + conAviso.slice(0, 4).join(', ') + (conAviso.length > 4 ? '…' : '') })]));
     }
 
+    var exc = excesos();
+    if (exc.length) {
+      var quien = exc.slice(0, 2).map(function (x) { var c = /^(#\s*\d+)/.exec(x.d.nombre); return x.d.tiene + ' con ' + (c ? c[1].replace(/\s+/g, '') : x.d.nombre) + ' (' + duracion(x.ms) + ')'; }).join(' · ');
+      ban.appendChild(h('button', { type: 'button', class: 'banner-exceso', onclick: function () { if (!S.modal) mostrarExcesos(exc, { voluntario: true }); } }, [ic('alerta'),
+        h('span', { text: (exc.length === 1 ? '1 lleva' : exc.length + ' llevan') + ' más de ' + LIMITE_H + ' horas sin devolver: ' + quien + (exc.length > 2 ? ' y ' + (exc.length - 2) + ' más' : '') }),
+        h('span', { class: 'ver', text: 'Ver' })]));
+    }
+
     var res = vaciar($('resumen'));
     [['libre', 'Libres', libres, 'borde-ok'], ['uso', 'En uso', usados, 'borde-acento']].forEach(function (x) {
       res.appendChild(h('div', {
@@ -876,18 +968,19 @@ body.modal-abierto{overflow:hidden}
     var avs = avisosDe(d);
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
     var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
+    var largo8 = !!d.tiene && !!desde && ahora() - desde >= LIMITE_MS;
     var m = /^(#\s*\d+)\s+(.+)$/.exec(d.nombre);
     var grande = m ? m[1].replace(/\s+/g, '') : d.nombre, chico = m ? m[2] : (d.serie || '');
     var pie = !d.tiene
       ? [h('span', { class: 'cuadro-estado' }, [ic('check'), 'LIBRE'])]
       : [h('span', { class: 'cuadro-quien', text: d.tiene }),
-         h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + 'desde ' + cuando(desde)])];
+         h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + (largo8 ? 'lleva ' + duracion(ahora() - desde) : 'desde ' + cuando(desde))])];
     return h('button', {
-      type: 'button', class: 'cuadro ' + (!d.tiene ? 'libre' : viejo ? 'viejo' : 'uso'),
-      'aria-label': d.nombre + ', ' + (d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre') + (avs.length ? ', con aviso' : ''),
+      type: 'button', class: 'cuadro ' + (!d.tiene ? 'libre' : largo8 ? 'exceso' : viejo ? 'viejo' : 'uso'),
+      'aria-label': d.nombre + ', ' + (d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre') + (largo8 ? ', lleva más de ' + LIMITE_H + ' horas' : '') + (avs.length ? ', con aviso' : ''),
       onclick: function () { if (d.tiene) menuDispositivo(d); else accionCoger(d); }
     }, [
-      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo]), avs.length ? h('span', { class: 'cuadro-aviso', title: 'Con aviso' }, [ic('alerta')]) : null]),
+      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo]), largo8 ? h('span', { class: 'cuadro-exceso' }, [ic('reloj'), '+' + LIMITE_H + ' h']) : null, avs.length ? h('span', { class: 'cuadro-aviso', title: 'Con aviso' }, [ic('alerta')]) : null]),
       h('div', { class: 'cuadro-medio' }, [h('div', { class: 'cuadro-num' + (m ? '' : ' largo'), text: grande }), chico ? h('div', { class: 'cuadro-nom', text: chico }) : null]),
       h('div', { class: 'cuadro-pie' }, pie)
     ]);
@@ -915,14 +1008,16 @@ body.modal-abierto{overflow:hidden}
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
     var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
     var avs = avisosDe(d);
-    var clase = 'tarjeta ' + (!d.tiene ? 'borde-ok' : viejo ? 'borde-aviso' : 'borde-acento');
+    var largo8 = !!d.tiene && !!desde && ahora() - desde >= LIMITE_MS;
+    var clase = 'tarjeta ' + (!d.tiene ? 'borde-ok' : largo8 ? 'borde-mal' : viejo ? 'borde-aviso' : 'borde-acento');
     var meta = [h('span', { class: 'meta' }, [ic(ICONO_GRUPO[d.grupo]), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
     var estado;
     if (!d.tiene) {
       estado = h('div', { class: 'estado-linea' }, [h('span', { class: 'chip ok' }, [ic('check'), 'Libre'])]);
     } else {
       estado = h('div', { class: 'estado-linea' }, [
-        h('span', { class: 'chip ' + (viejo ? 'aviso' : 'acento') }, [ic(viejo ? 'alerta' : 'reloj'), viejo ? 'Desde ' + diaRelativo(desde) : 'En uso']),
+        largo8 ? h('span', { class: 'chip exceso' }, [ic('alerta'), 'Más de ' + LIMITE_H + ' h · ' + duracion(ahora() - desde)])
+               : h('span', { class: 'chip ' + (viejo ? 'aviso' : 'acento') }, [ic(viejo ? 'alerta' : 'reloj'), viejo ? 'Desde ' + diaRelativo(desde) : 'En uso']),
         h('span', { text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) })
       ]);
     }
