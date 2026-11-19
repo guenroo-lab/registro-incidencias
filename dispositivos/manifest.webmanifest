@@ -1,6 +1,6 @@
 {
-  "name": "Registro de dispositivos",
-  "short_name": "Dispositivos",
+  "name": "Anubis · Registro de máquinas y dispositivos",
+  "short_name": "Anubis",
   "description": "Quién tiene cada máquina o dispositivo y desde cuándo.",
   "lang": "es",
   "start_url": "./",

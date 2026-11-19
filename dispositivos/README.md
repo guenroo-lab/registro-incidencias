@@ -1,4 +1,4 @@
-# Registro de dispositivos
+# Anubis · Registro de máquinas y dispositivos
 
 Web simple (móvil y ordenador) para apuntar **quién coge cada dispositivo o máquina y cuándo lo deja**.
 Pantalla de **cuadros** (verde = libre, color de acento = ocupado, ámbar = lleva cogido desde un día anterior),
