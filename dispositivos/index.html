@@ -69,6 +69,7 @@
 [data-kmode="light"][data-ktheme="taisared"]{--accent:#dc1a23;--accent-ink:#ffffff;--accent-dim:#fde6e6;--accent-line:#f0aaac;--accent-deep:#a8121a;--accent-glow:rgba(220,26,35,.30);--accent-soft:rgba(220,26,35,.14);--accent-text:#a8121a}
 [data-kmode="light"][data-ktheme="retro80s"]{--accent:#d6127a;--accent-ink:#ffffff;--accent-dim:#ffe0f0;--accent-line:#ffb3d9;--accent-deep:#9d0c5a;--accent-glow:rgba(214,18,122,.30);--accent-soft:rgba(214,18,122,.14);--accent-text:#9d0c5a}
 
+
 *{box-sizing:border-box}
 html,body{background:var(--ink-950)}
 body{margin:0;padding:14px 14px calc(40px + env(safe-area-inset-bottom));color:var(--text-100);font-family:var(--font);-webkit-font-smoothing:antialiased;transition:background .15s ease,color .15s ease}
@@ -251,6 +252,15 @@ input[type=date]{min-width:0;max-width:100%}
 .btn-operario{min-height:56px;border-radius:16px;border:2px solid var(--ink-700);background:var(--ink-900);color:var(--text-100);font-size:15px;font-weight:800;cursor:pointer;padding:8px 10px;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere}
 .btn-operario:active,.btn-operario.activo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent-text)}
 .aviso-modal{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-fg);border-radius:var(--radius-btn);padding:10px 12px;font-size:13.5px;line-height:1.4;margin:0 0 12px}
+.cuadro-aviso{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:#f0a020;color:#241400;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.cuadro-top .cuadro-aviso svg.i{width:17px;height:17px;opacity:1}
+.banner-avisos{display:flex;align-items:flex-start;gap:8px;font-weight:700}
+.banner-avisos svg.i{width:18px;height:18px;flex:none;margin-top:1px}
+.tabs button.tab-candado{flex:0 0 auto;min-width:46px;padding-left:8px;padding-right:8px}
+.badge-tab.aviso{background:#f0a020;color:#241400}
+.pin-campo{text-align:center;font-size:30px;font-weight:900;letter-spacing:.5em;padding-left:.5em;font-variant-numeric:tabular-nums}
+.titulo-seccion{font-size:12px;font-weight:900;letter-spacing:.08em;text-transform:uppercase;color:var(--text-300);margin:18px 2px 8px}
+.aviso-texto{margin:6px 0 8px;font-weight:700;overflow-wrap:anywhere}
 .aviso-modal.info{background:var(--info-bg);border-color:var(--info-line);color:var(--info-fg)}
 .error-modal{color:var(--danger-fg);background:var(--danger-bg);border:1px solid var(--danger-line);border-radius:var(--radius-btn);padding:9px 12px;font-size:13.5px;margin:0 0 10px}
 
@@ -406,7 +416,8 @@ body.modal-abierto{overflow:hidden}
     tab: 'ahora', q: '', grupo: '', estado: '', vista: (lsGet('rd_vista') === 'lista' ? 'lista' : 'cuadros'),
     aj: 'disp', verArchivados: false,
     hist: { filas: [], mas: false, cargando: false, f: { dispositivo_id: '', persona: '', accion: '', desde: '', hasta: '' } },
-    yo: lsGet('rd_yo') || '', modal: null, temporizador: null
+    yo: lsGet('rd_yo') || '', modal: null, temporizador: null,
+    pin: null, pinTs: 0, av: { todos: [], listo: false, error: null }
   };
 
   // ── Llamadas al servidor ──────────────────────────────────────────────────
@@ -416,7 +427,7 @@ body.modal-abierto{overflow:hidden}
     return fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=UTF-8' },    // petición «simple»: sin preflight de CORS
-      body: JSON.stringify({ clave: S.clave, accion: accion, args: args || {} }),
+      body: JSON.stringify({ clave: S.clave, accion: accion, args: conPinArgs(accion, args) }),
       signal: ctl ? ctl.signal : undefined,
       cache: 'no-store'
     }).then(function (r) {
@@ -437,14 +448,64 @@ body.modal-abierto{overflow:hidden}
         pantallaAcceso((j.error || 'Clave no válida.') + ' Comprueba el enlace o pide uno nuevo.');
         throw new Error('__acceso__');
       }
+      if (j.ok === false && j.codigo === 'pin' && accion !== 'comprobar_pin') {
+        bloquear(j.error || 'PIN no válido.');
+        throw new Error('__pin__');
+      }
       return j;
     }, function (e) { if (tm) clearTimeout(tm); throw e; });
   }
   function msgError(e) { return (e && e.message) ? e.message : 'Algo ha fallado.'; }
 
+  // ── PIN de jefes (la comprobación de verdad está en el servidor) ───────────
+  var GATED = ['comprobar_pin', 'historial', 'exportar', 'avisos', 'resolver_aviso', 'guardar_dispositivo', 'archivar_dispositivo',
+    'importar_dispositivos', 'guardar_persona', 'archivar_persona', 'importar_personas', 'cambiar_clave', 'cambiar_pin'];
+  var PIN_REPOSO_MS = 10 * 60 * 1000;
+  function silencio(e) { return !!e && (e.message === '__acceso__' || e.message === '__pin__'); }
+  function conPin() { return !!(S.est && S.est.con_pin); }
+  function desbloqueado() { return !conPin() || (!!S.pin && Date.now() - S.pinTs < PIN_REPOSO_MS); }
+  function conPinArgs(accion, args) {
+    var a = args || {};
+    if (S.pin && GATED.indexOf(accion) !== -1 && a.pin === undefined) { a = Object.assign({}, a, { pin: S.pin }); S.pinTs = Date.now(); }
+    return a;
+  }
+  function bloquear(mensaje) {
+    S.pin = null; S.pinTs = 0;
+    if (mensaje) toast(mensaje, 'mal');
+    cerrarModal();
+    if (!S.clave) return;
+    S.tab = 'ahora'; S.montado = '';
+    pintarTabs(); pintarVista(true);
+  }
+  function pedirPin(despues) {
+    var campo = h('input', { type: 'password', id: 'pinCampo', inputmode: 'numeric', pattern: '[0-9]*', maxlength: '4', autocomplete: 'off', class: 'pin-campo', 'aria-label': 'PIN de 4 números', placeholder: '••••' });
+    var enviando = false;
+    function probar(mm) {
+      var v = campo.value.trim();
+      if (!/^[0-9]{4}$/.test(v)) { mm.error('El PIN son 4 números.'); campo.focus(); return; }
+      if (enviando) return;
+      enviando = true; mm.error(''); mm.ocupar(true);
+      llamar('comprobar_pin', { pin: v }).then(function (r) {
+        enviando = false; mm.ocupar(false);
+        if (r.ok === false) { mm.error(r.error || 'PIN no válido.'); campo.value = ''; campo.focus(); return; }
+        S.pin = v; S.pinTs = Date.now();
+        mm.cerrar(); pintarTabs();
+        if (despues) despues();
+      }).catch(function (e) { enviando = false; mm.ocupar(false); if (!silencio(e)) mm.error(msgError(e)); });
+    }
+    var modal = abrirModal({
+      titulo: 'Zona de jefes', sub: 'Avisos, historial y ajustes. Escribe el PIN de 4 números.',
+      cuerpo: h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'pinCampo', text: 'PIN' }), campo]),
+      enfoque: function () { return campo; },
+      botones: [{ texto: 'Cancelar', clase: 'borde', accion: function (mm) { mm.cerrar(); } }, { texto: 'Entrar', icono: 'candado', accion: probar }]
+    });
+    campo.addEventListener('input', function () { campo.value = campo.value.replace(/[^0-9]/g, '').slice(0, 4); if (campo.value.length === 4) probar(modal); });
+    campo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') probar(modal); });
+  }
+
   function aplicarEstado(j) {
     if (!j || !j.dispositivos) return;
-    S.est = { dispositivos: j.dispositivos, personas: j.personas };
+    S.est = { dispositivos: j.dispositivos, personas: j.personas, con_pin: !!j.con_pin, avisos: j.avisos || [] };
     if (j.ahora) S.desfase = new Date(j.ahora).getTime() - Date.now();
     S.ultima = Date.now(); S.error = null;
   }
@@ -458,7 +519,7 @@ body.modal-abierto{overflow:hidden}
       if (j.ok === false) throw new Error(j.error || 'No se pudo cargar.');
       aplicarEstado(j);
     }).catch(function (e) {
-      if (e.message === '__acceso__') return;
+      if (silencio(e)) return;
       S.error = msgError(e);
     }).then(function () {
       S.cargando = false;
@@ -582,16 +643,30 @@ body.modal-abierto{overflow:hidden}
 
   function pintarTabs() {
     var nav = vaciar($('tabs'));
-    [['ahora', 'Ahora', 'caja'], ['historial', 'Historial', 'historial'], ['ajustes', 'Ajustes', 'ajustes']].forEach(function (t) {
-      var n = t[0] === 'ahora' ? enUso() : 0;
+    var nAv = S.est && S.est.avisos ? S.est.avisos.length : 0;
+    var lista = [['ahora', 'Ahora', 'caja']];
+    if (S.est && desbloqueado()) lista.push(['avisos', 'Avisos', 'alerta'], ['historial', 'Historial', 'historial'], ['ajustes', 'Ajustes', 'ajustes']);
+    lista.forEach(function (t) {
+      var n = t[0] === 'ahora' ? enUso() : t[0] === 'avisos' ? nAv : 0;
       nav.appendChild(h('button', {
         type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', class: S.tab === t[0] ? 'activa' : '',
         onclick: function () { cambiarTab(t[0]); }
-      }, [ic(t[2]), t[1], n ? h('span', { class: 'badge-tab', text: String(n), 'aria-label': n + ' en uso' }) : null]));
+      }, [ic(t[2]), t[1], n ? h('span', { class: 'badge-tab' + (t[0] === 'avisos' ? ' aviso' : ''), text: String(n), 'aria-label': n + (t[0] === 'avisos' ? ' abiertos' : ' en uso') }) : null]));
     });
+    if (conPin()) {
+      if (desbloqueado()) {
+        nav.appendChild(h('button', { type: 'button', class: 'tab-candado', 'aria-label': 'Bloquear la zona de jefes',
+          onclick: function () { bloquear(''); toast('Zona de jefes bloqueada.', 'ok'); } }, [ic('candado'), h('span', { class: 'solo-lectores', text: 'Bloquear' })]));
+      } else {
+        nav.appendChild(h('button', { type: 'button', class: 'tab-candado', 'aria-label': 'Zona de jefes, pide PIN',
+          onclick: function () { pedirPin(function () { cambiarTab(nAv ? 'avisos' : 'historial'); }); } }, [ic('candado'), 'Jefes']));
+      }
+    }
   }
 
   function cambiarTab(t) {
+    if (t !== 'ahora' && !desbloqueado()) { S.pin = null; pedirPin(function () { cambiarTab(t); }); return; }
+    if (S.pin) S.pinTs = Date.now();
     S.tab = t;
     S.montado = '';
     pintarTabs();
@@ -622,7 +697,9 @@ body.modal-abierto{overflow:hidden}
       }
       return;
     }
+    if (S.tab !== 'ahora' && !desbloqueado()) { S.tab = 'ahora'; S.montado = ''; pintarTabs(); forzar = true; }
     if (S.tab === 'ahora') { if (forzar || S.montado !== 'ahora') montarAhora(); pintarAhora(); }
+    else if (S.tab === 'avisos') { if (forzar || S.montado !== 'avisos') { montarAvisos(); cargarAvisos(); } else pintarAvisos(); }
     else if (S.tab === 'historial') { if (forzar || S.montado !== 'historial') montarHistorial(); pintarHistorial(); }
     else { montarAjustes(); }
   }
@@ -641,6 +718,7 @@ body.modal-abierto{overflow:hidden}
       return h('button', { type: 'button', class: S.vista === x[0] ? 'activa' : '', 'aria-pressed': S.vista === x[0] ? 'true' : 'false', 'aria-label': x[1],
         onclick: function () { S.vista = x[0]; lsSet('rd_vista', x[0]); montarAhora(); pintarAhora(); } }, [ic(x[0])]);
     }));
+    v.appendChild(h('div', { id: 'bannerAvisos' }));
     v.appendChild(h('div', { class: 'resumen', id: 'resumen' }));
     v.appendChild(h('div', { class: 'fila-buscar' }, [buscador, conmutador]));
     v.appendChild(h('div', { class: 'chips-scroll', id: 'chipsGrupo', role: 'group', 'aria-label': 'Tipo' }));
@@ -652,6 +730,15 @@ body.modal-abierto{overflow:hidden}
     var todos = S.est.dispositivos.filter(function (d) { return d.activo; });
     var libres = todos.filter(function (d) { return !d.tiene; }).length;
     var usados = todos.length - libres;
+
+    var ban = vaciar($('bannerAvisos'));
+    var avAbiertos = S.est.avisos || [];
+    if (avAbiertos.length) {
+      var conAviso = [];
+      avAbiertos.forEach(function (a) { if (conAviso.indexOf(a.dispositivo) === -1) conAviso.push(a.dispositivo); });
+      ban.appendChild(h('div', { class: 'aviso-modal banner-avisos', role: 'status' }, [ic('alerta'),
+        h('span', { text: conAviso.length + (conAviso.length === 1 ? ' dispositivo con aviso: ' : ' dispositivos con aviso: ') + conAviso.slice(0, 4).join(', ') + (conAviso.length > 4 ? '…' : '') })]));
+    }
 
     var res = vaciar($('resumen'));
     [['libre', 'Libres', libres, 'borde-ok'], ['uso', 'En uso', usados, 'borde-acento']].forEach(function (x) {
@@ -720,7 +807,10 @@ body.modal-abierto{overflow:hidden}
   }
 
   // «#12 Retráctil Linde» → número grande «#12» y nombre pequeño; si no lleva número, el nombre va grande
+  function avisosDe(d) { return ((S.est && S.est.avisos) || []).filter(function (a) { return a.dispositivo_id === d.id; }); }
+
   function cuadroDispositivo(d) {
+    var avs = avisosDe(d);
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
     var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
     var m = /^(#\s*\d+)\s+(.+)$/.exec(d.nombre);
@@ -731,23 +821,27 @@ body.modal-abierto{overflow:hidden}
          h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + 'desde ' + cuando(desde)])];
     return h('button', {
       type: 'button', class: 'cuadro ' + (!d.tiene ? 'libre' : viejo ? 'viejo' : 'uso'),
-      'aria-label': d.nombre + ', ' + (d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre'),
+      'aria-label': d.nombre + ', ' + (d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre') + (avs.length ? ', con aviso' : ''),
       onclick: function () { if (d.tiene) menuDispositivo(d); else accionCoger(d); }
     }, [
-      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo])]),
+      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo]), avs.length ? h('span', { class: 'cuadro-aviso', title: 'Con aviso' }, [ic('alerta')]) : null]),
       h('div', { class: 'cuadro-medio' }, [h('div', { class: 'cuadro-num' + (m ? '' : ' largo'), text: grande }), chico ? h('div', { class: 'cuadro-nom', text: chico }) : null]),
       h('div', { class: 'cuadro-pie' }, pie)
     ]);
   }
+
+  function textoAviso(a) { return 'Aviso de ' + a.por + ' (' + cuando(new Date(a.ts).getTime()) + '): ' + a.texto; }
 
   // al tocar un cuadro ocupado: dejarlo o cogerlo tú
   function menuDispositivo(d) {
     var desde = new Date(d.desde).getTime();
     abrirModal({
       titulo: d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : ''),
-      cuerpo: h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + ').' }),
+      cuerpo: h('div', null, [h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + ').' })]
+        .concat(avisosDe(d).slice(0, 3).map(function (a) { return h('div', { class: 'aviso-modal', text: textoAviso(a) }); }))),
       botones: [
         { texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Avisar de un problema', clase: 'borde', icono: 'alerta', accion: function (m) { m.cerrar(); accionAvisar(d); } },
         { texto: 'Cogerlo yo', clase: 'borde', icono: 'mano', accion: function (m) { m.cerrar(); accionCoger(d); } },
         { texto: 'Dejar', icono: 'devolver', accion: function (m) { m.cerrar(); accionDejar(d); } }
       ]
@@ -757,6 +851,7 @@ body.modal-abierto{overflow:hidden}
   function tarjetaDispositivo(d) {
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
     var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
+    var avs = avisosDe(d);
     var clase = 'tarjeta ' + (!d.tiene ? 'borde-ok' : viejo ? 'borde-aviso' : 'borde-acento');
     var meta = [h('span', { class: 'meta' }, [ic(ICONO_GRUPO[d.grupo]), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
     var estado;
@@ -772,10 +867,12 @@ body.modal-abierto{overflow:hidden}
       ? [h('button', { type: 'button', class: 'btn', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Coger'])]
       : [h('button', { type: 'button', class: 'btn', onclick: function () { accionDejar(d); } }, [ic('devolver'), 'Dejar']),
          h('button', { type: 'button', class: 'btn borde', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Cogerlo yo'])];
+    botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Avisar de un problema de ' + d.nombre, onclick: function () { accionAvisar(d); } }, [ic('alerta'), 'Avisar']));
     return h('div', { class: clase }, [
       h('div', { class: 'tarjeta-cabecera' }, [h('div', { class: 'nombre', text: d.nombre })]),
       h('div', null, meta),
       estado,
+      avs.length ? h('div', { class: 'estado-linea' }, [h('span', { class: 'chip aviso' }, [ic('alerta'), 'Con aviso']), h('span', { text: avs[0].texto })]) : null,
       h('div', { class: 'fila-botones' }, botones)
     ]);
   }
@@ -787,6 +884,7 @@ body.modal-abierto{overflow:hidden}
     var elegido = null;
     var cuerpo = h('div');
     if (o.aviso) cuerpo.appendChild(h('div', { class: 'aviso-modal ' + (o.avisoClase || ''), text: o.aviso }));
+    (o.avisos || []).forEach(function (a) { cuerpo.appendChild(h('div', { class: 'aviso-modal ' + (a.clase || ''), text: a.texto })); });
     if (!personas.length) {
       cuerpo.appendChild(h('div', { class: 'aviso-modal', text: 'No hay personas en la lista. Añádelas en Ajustes → Personas.' }));
     }
@@ -812,7 +910,11 @@ body.modal-abierto{overflow:hidden}
       cuerpo.appendChild(tit); cuerpo.appendChild(rej);
     });
     var nota = h('input', { type: 'text', id: 'notaMov', maxlength: '200', placeholder: o.notaPlaceholder || 'Nota (opcional)', autocomplete: 'off' });
-    cuerpo.appendChild(h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'notaMov', text: 'Nota' }), nota]));
+    cuerpo.appendChild(h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'notaMov', text: o.notaEtiqueta || 'Nota' }), nota]));
+    if (o.disp) {
+      cuerpo.appendChild(h('button', { type: 'button', class: 'btn mini borde', style: 'margin-bottom:6px',
+        onclick: function () { m.cerrar(); accionAvisar(o.disp); } }, [ic('alerta'), 'Avisar de un problema']));
+    }
 
     function aplicarFiltro() {
       var q = norm(filtro ? filtro.value : '');
@@ -833,6 +935,7 @@ body.modal-abierto{overflow:hidden}
       texto: 'Elige quién eres', clase: '', icono: o.icono, deshabilitado: function () { return !elegido; },
       accion: function (m) {
         if (!elegido) return;
+        if (o.notaObligatoria && !nota.value.trim()) { m.error('Escribe qué le pasa.'); nota.focus(); return; }
         m.error('');
         m.ocupar(true);
         var texto = principal.el.lastChild.textContent;
@@ -850,7 +953,7 @@ body.modal-abierto{overflow:hidden}
           pintarTodo();
           if (o.hecho) toast(o.hecho(elegido, r), 'ok');
         }).catch(function (e) {
-          if (e.message === '__acceso__') return;
+          if (silencio(e)) return;
           m.ocupar(false); principal.el.lastChild.textContent = texto;
           m.error(msgError(e));
         });
@@ -870,10 +973,13 @@ body.modal-abierto{overflow:hidden}
 
   function accionCoger(d) {
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    var avisos = [];
+    if (d.grupo === 'Máquina') avisos.push({ texto: 'Revisa el agua y el estado antes de coger la máquina.', clase: 'aviso' });
+    avisosDe(d).slice(0, 3).forEach(function (a) { avisos.push({ texto: textoAviso(a), clase: 'aviso' }); });
     elegirPersona({
-      titulo: 'Coger', sub: d.nombre, icono: 'mano', pre: S.yo,
+      titulo: 'Coger', sub: d.nombre, icono: 'mano', pre: S.yo, disp: d,
       aviso: d.tiene ? 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + '. Al cogerlo tú, se anota que ' + d.tiene + ' lo deja.' : null,
-      avisoClase: 'aviso',
+      avisoClase: 'aviso', avisos: avisos,
       boton: function (p) { return 'Coger como ' + p; },
       notaPlaceholder: 'Nota (opcional): para qué, dónde estará…',
       enviar: function (p, nota) { return llamar('coger', { dispositivo_id: d.id, persona: p, nota: nota, forzar: !!d.tiene }); },
@@ -883,15 +989,97 @@ body.modal-abierto{overflow:hidden}
 
   function accionDejar(d) {
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    var avisos = [];
+    if (d.grupo === 'Móvil / lector') avisos.push({ texto: 'Asegúrate de dejar bien conectado el dispositivo en carga.', clase: 'aviso' });
     elegirPersona({
-      titulo: 'Dejar', sub: d.nombre, icono: 'devolver', pre: d.tiene,
+      titulo: 'Dejar', sub: d.nombre, icono: 'devolver', pre: d.tiene, disp: d,
       aviso: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + '). Elige quién lo deja.',
-      avisoClase: 'info',
+      avisoClase: 'info', avisos: avisos,
       boton: function (p) { return norm(p) === norm(d.tiene) ? 'Dejar (' + p + ')' : 'Registrar el «dejar» como ' + p; },
       notaPlaceholder: 'Nota (opcional): dónde lo dejas, avería…',
       enviar: function (p, nota) { return llamar('dejar', { dispositivo_id: d.id, persona: p, nota: nota }); },
       hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba libre' : d.nombre + ' queda libre'; }
     });
+  }
+
+  function accionAvisar(d) {
+    elegirPersona({
+      titulo: 'Avisar de un problema', sub: d.nombre, icono: 'alerta', pre: S.yo,
+      aviso: 'Le saldrá a los jefes de equipo y a quien lo coja después, hasta que un jefe lo marque como resuelto.', avisoClase: 'info',
+      boton: function (p) { return 'Enviar aviso como ' + p; },
+      notaEtiqueta: 'Qué le pasa', notaPlaceholder: 'Ej.: falta agua, frena mal, pantalla rota…', notaObligatoria: true,
+      enviar: function (p, nota) { return llamar('avisar', { dispositivo_id: d.id, persona: p, texto: nota }); },
+      hecho: function () { return 'Aviso enviado a los jefes'; }
+    });
+  }
+
+  function accionResolver(a) {
+    elegirPersona({
+      titulo: 'Marcar resuelto', sub: a.dispositivo + ' · «' + a.texto + '»', icono: 'check', pre: S.yo,
+      boton: function (p) { return 'Resuelto por ' + p; },
+      notaEtiqueta: 'Qué se ha hecho', notaPlaceholder: 'Opcional: se rellenó el agua, se llamó al SAT…',
+      enviar: function (p, nota) { return llamar('resolver_aviso', { id: a.id, persona: p, nota: nota }); },
+      hecho: function () { cargarAvisos(); return 'Aviso resuelto'; }
+    });
+  }
+
+  // ── Pestaña «Avisos» (zona de jefes) ──────────────────────────────────────
+  function montarAvisos() {
+    S.montado = 'avisos';
+    var v = vaciar($('vista'));
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'nombre', text: 'Avisos de averías y problemas' }),
+      h('p', { class: 'meta', text: 'Los apunta cualquiera desde el cuadro de cada dispositivo. Aquí los jefes los revisan y los marcan como resueltos.' })
+    ]));
+    v.appendChild(h('div', { id: 'avisosLista' }));
+  }
+
+  var avSeq = 0;
+  function cargarAvisos() {
+    var mi = ++avSeq;
+    S.av.listo = false; S.av.error = null; pintarAvisos();
+    return llamar('avisos').then(function (r) {
+      if (mi !== avSeq) return;
+      if (r.ok === false) throw new Error(r.error || 'No se han podido cargar.');
+      S.av.todos = r.avisos || []; S.av.listo = true; pintarAvisos();
+    }).catch(function (e) {
+      if (mi !== avSeq || silencio(e)) return;
+      S.av.error = msgError(e); pintarAvisos();
+    });
+  }
+
+  function pintarAvisos() {
+    var cont = $('avisosLista');
+    if (!cont || S.tab !== 'avisos') return;
+    vaciar(cont);
+    if (S.av.error) {
+      cont.appendChild(h('div', { class: 'tarjeta borde-mal' }, [h('p', { class: 'meta', text: S.av.error }),
+        h('button', { type: 'button', class: 'btn', onclick: cargarAvisos }, [ic('refrescar'), 'Reintentar'])]));
+      return;
+    }
+    if (!S.av.listo) { cont.appendChild(h('div', { class: 'vacio', text: 'Cargando…' })); return; }
+    var abiertos = S.av.todos.filter(function (a) { return !a.resuelto; });
+    var resueltos = S.av.todos.filter(function (a) { return a.resuelto; });
+    cont.appendChild(h('h2', { class: 'titulo-seccion', text: 'Abiertos ' + abiertos.length }));
+    if (!abiertos.length) cont.appendChild(h('div', { class: 'vacio', text: 'No hay avisos abiertos.' }));
+    abiertos.forEach(function (a) {
+      cont.appendChild(h('div', { class: 'tarjeta borde-aviso' }, [
+        h('div', { class: 'nombre', text: a.dispositivo }),
+        h('p', { class: 'aviso-texto', text: a.texto }),
+        h('div', { class: 'meta' }, [ic('reloj'), ' Avisó ' + a.por + ' · ' + cuando(new Date(a.ts).getTime())]),
+        h('div', { class: 'fila-botones', style: 'margin-top:10px' }, [h('button', { type: 'button', class: 'btn', onclick: function () { accionResolver(a); } }, [ic('check'), 'Marcar resuelto'])])
+      ]));
+    });
+    if (resueltos.length) {
+      cont.appendChild(h('h2', { class: 'titulo-seccion', text: 'Resueltos recientes' }));
+      resueltos.slice(0, 30).forEach(function (a) {
+        cont.appendChild(h('div', { class: 'tarjeta borde-ok' }, [
+          h('div', { class: 'nombre', text: a.dispositivo }),
+          h('p', { class: 'meta', text: '«' + a.texto + '» · avisó ' + a.por + ' ' + cuando(new Date(a.ts).getTime()) }),
+          h('p', { class: 'meta', text: 'Resuelto por ' + a.resuelto_por + ' ' + cuando(new Date(a.resuelto_ts).getTime()) + (a.resuelto_nota ? ' · ' + a.resuelto_nota : '') })
+        ]));
+      });
+    }
   }
 
   // ── Pestaña «Historial» ───────────────────────────────────────────────────
@@ -949,7 +1137,7 @@ body.modal-abierto{overflow:hidden}
       S.hist.filas = S.hist.filas.concat(j.filas || []);
       S.hist.mas = !!j.mas;
     }).catch(function (e) {
-      if (mi !== hSeq || e.message === '__acceso__') return;
+      if (mi !== hSeq || silencio(e)) return;
       S.hist.error = msgError(e);
     }).then(function () {
       if (mi !== hSeq) return;
@@ -1031,7 +1219,7 @@ body.modal-abierto{overflow:hidden}
       document.body.appendChild(enlace); enlace.click(); document.body.removeChild(enlace);
       setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
       toast((j.filas || []).length + ' movimientos descargados' + (j.mas ? ' (solo los 5.000 más recientes)' : ''), 'ok');
-    }).catch(function (e) { if (e.message !== '__acceso__') toast(msgError(e), 'mal'); });
+    }).catch(function (e) { if (!silencio(e)) toast(msgError(e), 'mal'); });
   }
 
   // ── Pestaña «Ajustes» ─────────────────────────────────────────────────────
@@ -1122,7 +1310,7 @@ body.modal-abierto{overflow:hidden}
             m.ocupar(false);
             if (r.ok === false) { m.error(r.error); return; }
             aplicarEstado(r); m.cerrar(); pintarTodo(); toast('Guardado', 'ok');
-          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+          }).catch(function (e) { m.ocupar(false); if (!silencio(e)) m.error(msgError(e)); });
         } }
       ]
     });
@@ -1133,7 +1321,7 @@ body.modal-abierto{overflow:hidden}
       llamar(esDisp ? 'archivar_dispositivo' : 'archivar_persona', { id: x.id, activo: activo }).then(function (r) {
         if (r.ok === false) { toast(r.error, 'mal'); return; }
         aplicarEstado(r); pintarTodo(); toast(activo ? 'Recuperado' : 'Archivado (el historial se conserva)', 'ok');
-      }).catch(function (e) { if (e.message !== '__acceso__') toast(msgError(e), 'mal'); });
+      }).catch(function (e) { if (!silencio(e)) toast(msgError(e), 'mal'); });
     };
     if (activo) { ir(); return; }
     confirmarModal('Archivar «' + x.nombre + '»', 'Deja de salir en las listas, pero su historial se conserva. Se puede recuperar cuando quieras.', 'Archivar', true).then(function (si) { if (si) ir(); });
@@ -1173,7 +1361,7 @@ body.modal-abierto{overflow:hidden}
             if (r.ok === false) { m.error(r.error); return; }
             aplicarEstado(r); m.cerrar(); pintarTodo();
             toast(r.nuevos + ' nuevos' + (r.existentes ? ', ' + r.existentes + ' ya estaban' : ''), 'ok');
-          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+          }).catch(function (e) { m.ocupar(false); if (!silencio(e)) m.error(msgError(e)); });
         } }
       ]
     });
@@ -1206,9 +1394,45 @@ body.modal-abierto{overflow:hidden}
       ])
     ]));
     v.appendChild(h('div', { class: 'tarjeta' }, [
-      h('div', { class: 'nombre', text: 'Cómo funciona' }),
-      h('p', { class: 'meta', text: 'Coger y Dejar apuntan quién, qué y cuándo. Si algo lleva cogido desde un día anterior sale en ámbar: puede que se haya olvidado de dejarse. Los dispositivos y personas archivados no salen en las listas, pero su historial se conserva.' })
+      h('div', { class: 'nombre', text: 'PIN de jefes' }),
+      h('p', { class: 'meta', text: conPin()
+        ? 'Los Avisos, el Historial y los Ajustes piden un PIN de 4 números. Se bloquean solos tras 10 minutos sin tocar nada.'
+        : 'Todavía no hay PIN: cualquiera con el enlace ve el Historial y los Ajustes. Pon uno de 4 números.' }),
+      h('div', { class: 'fila-botones' }, [h('button', { type: 'button', class: 'btn borde', onclick: cambiarPin }, [ic('candado'), conPin() ? 'Cambiar el PIN' : 'Poner un PIN'])])
     ]));
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'nombre', text: 'Cómo funciona' }),
+      h('p', { class: 'meta', text: 'Coger y Dejar apuntan quién, qué y cuándo. Si algo lleva cogido desde un día anterior sale en ámbar: puede que se haya olvidado de dejarse. Con «Avisar de un problema» se deja un aviso que ven los jefes y quien coja después. Los dispositivos y personas archivados no salen en las listas, pero su historial se conserva.' })
+    ]));
+  }
+
+  function cambiarPin() {
+    function campoPin(id) { return h('input', { type: 'password', id: id, inputmode: 'numeric', pattern: '[0-9]*', maxlength: '4', autocomplete: 'off', class: 'pin-campo', placeholder: '••••' }); }
+    var p1 = campoPin('pn1'), p2 = campoPin('pn2');
+    [p1, p2].forEach(function (c) { c.addEventListener('input', function () { c.value = c.value.replace(/[^0-9]/g, '').slice(0, 4); }); });
+    abrirModal({
+      titulo: conPin() ? 'Cambiar el PIN' : 'Poner un PIN', sub: '4 números. Es el que usan los jefes para ver Avisos, Historial y Ajustes.',
+      cuerpo: h('div', null, [
+        h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'pn1', text: 'PIN nuevo' }), p1]),
+        h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'pn2', text: 'Repítelo' }), p2])
+      ]),
+      enfoque: function () { return p1; },
+      botones: [
+        { texto: 'Cancelar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Guardar', icono: 'check', accion: function (m) {
+          if (!/^[0-9]{4}$/.test(p1.value)) { m.error('Tienen que ser 4 números.'); return; }
+          if (p1.value !== p2.value) { m.error('No coinciden.'); return; }
+          m.error(''); m.ocupar(true);
+          llamar('cambiar_pin', { nueva: p1.value }).then(function (r) {
+            m.ocupar(false);
+            if (r.ok === false) { m.error(r.error); return; }
+            aplicarEstado(r);
+            S.pin = p1.value; S.pinTs = Date.now();
+            m.cerrar(); pintarTabs(); montarAjustes(); toast('PIN guardado. Díselo solo a quien deba entrar.', 'ok');
+          }).catch(function (e) { m.ocupar(false); if (!silencio(e)) m.error(msgError(e)); });
+        } }
+      ]
+    });
   }
 
   function cambiarClave() {
@@ -1232,7 +1456,7 @@ body.modal-abierto{overflow:hidden}
             if (r.ok === false) { m.error(r.error); return; }
             S.clave = n1.value; lsSet('rd_clave', n1.value);
             m.cerrar(); toast('Clave cambiada. Pasa el enlace nuevo a los demás.', 'ok');
-          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+          }).catch(function (e) { m.ocupar(false); if (!silencio(e)) m.error(msgError(e)); });
         } }
       ]
     });
@@ -1264,6 +1488,9 @@ body.modal-abierto{overflow:hidden}
       if (document.visibilityState !== 'visible' || !S.clave || S.modal || S.cargando) return;
       if (S.tab === 'ahora') cargarEstado(true);
     }, REFRESCO_MS);
+    setInterval(function () {
+      if (S.pin && !S.modal && Date.now() - S.pinTs > PIN_REPOSO_MS) bloquear('');
+    }, 15000);
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible' && S.clave && !S.modal && Date.now() - S.ultima > 20000) cargarEstado(true);
     });

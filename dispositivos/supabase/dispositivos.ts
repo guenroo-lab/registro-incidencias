@@ -17,9 +17,9 @@ const CORS = {
 };
 
 const ACCIONES = new Set([
-  "comprobar", "estado", "coger", "dejar", "historial", "exportar",
-  "guardar_dispositivo", "archivar_dispositivo", "importar_dispositivos",
-  "guardar_persona", "archivar_persona", "importar_personas", "cambiar_clave",
+  "comprobar", "comprobar_pin", "estado", "coger", "dejar", "avisar", "avisos", "resolver_aviso",
+  "historial", "exportar", "guardar_dispositivo", "archivar_dispositivo", "importar_dispositivos",
+  "guardar_persona", "archivar_persona", "importar_personas", "cambiar_clave", "cambiar_pin",
 ]);
 
 function json(cuerpo: unknown, status = 200): Response {
@@ -58,6 +58,6 @@ Deno.serve(async (req: Request): Promise<Response> => {
     return json({ ok: false, codigo: "servidor", error: "Error del servidor." }, 500);
   }
   const rechazo = data && data.ok === false ? data.codigo : null;
-  const status = rechazo === "clave" || rechazo === "sin_clave" ? 401 : rechazo === "bloqueado" ? 429 : 200;
+  const status = rechazo === "clave" || rechazo === "sin_clave" ? 401 : rechazo === "bloqueado" ? 429 : 200;   // «pin» va con 200: el PIN no es la clave de acceso
   return json(data, status);
 });

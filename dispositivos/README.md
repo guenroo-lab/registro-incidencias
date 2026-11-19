@@ -26,17 +26,24 @@ navegador ──POST {clave, accion, args}──▶ función de borde «disposit
 - `sql/001_registro_dispositivos.sql`: esquema `registro` (tablas con RLS y **sin permisos** para `anon`/`authenticated`) y la única
   puerta, `public.rd_accion(clave, accion, args)`, `security definer`, ejecutable solo por `service_role`. La clave se guarda con
   bcrypt; 50 intentos fallidos en 10 minutos bloquean los intentos 10 minutos. Re-ejecutable.
+- `sql/003_pin_y_avisos.sql`: PIN de 4 dígitos (hash bcrypt, 10 fallos en 10 minutos bloquean 10 minutos) y avisos de avería.
+  Con PIN puesto, el **servidor** lo exige para historial, exportar, avisos de los jefes, resolver avisos, ajustes y cambio de clave
+  o de PIN; coger, dejar, avisar y ver el estado no lo piden. Sin PIN puesto no se exige. La migración no lleva ningún PIN.
 - `sql/002_deshacer.sql`: lo quita todo (**borra** también el historial).
-- `pruebas/sql_pruebas.sql`: pruebas de la base de datos para un Postgres local vacío (ver cabecera del archivo).
+- `pruebas/sql_pruebas.sql` y `pruebas/sql_pruebas_pin_avisos.sql`: pruebas de la base de datos para un Postgres local vacío
+  (ver la cabecera de cada archivo).
 
 Los datos iniciales (personas y dispositivos) y la clave **no están en este repositorio** (es público): se cargan aparte.
 
 ## Poner en marcha / mover a otro proyecto de Supabase
 
-1. Ejecutar `sql/001_registro_dispositivos.sql` en el editor SQL del proyecto.
+1. Ejecutar `sql/001_registro_dispositivos.sql` y después `sql/003_pin_y_avisos.sql` en el editor SQL del proyecto (si el editor
+   corta textos largos, partirlos por funciones en trozos de unos 8.000 caracteres).
 2. Cargar las personas y los dispositivos iniciales (o dejarlas vacías y usar Ajustes → Importar lista).
 3. Fijar la clave inicial (guardada con hash):
    `update registro.config set clave_hash = extensions.crypt('LA-CLAVE', extensions.gen_salt('bf', 10)) where id = 1;`
+   Y el PIN de los jefes (o ponerlo desde Ajustes → Otros → «Poner un PIN»):
+   `update registro.config set pin_hash = extensions.crypt('1234', extensions.gen_salt('bf', 10)) where id = 1;`
 4. Desplegar `supabase/dispositivos.ts` como función `dispositivos` sin verificación de JWT.
 5. Si el proyecto es otro, cambiar la dirección de la función en `index.html` (constante `API`).
 
@@ -46,3 +53,9 @@ Los datos iniciales (personas y dispositivos) y la clave **no están en este rep
 - Dejar lo puede registrar otra persona (queda «lo registró X»).
 - Archivar un dispositivo o una persona la quita de las listas pero conserva el historial. No se puede archivar algo en uso.
 - Importar lista: una línea por dispositivo, `Nombre ; Tipo ; Serie` (tipo y serie opcionales), o columnas pegadas desde una hoja.
+- **PIN de jefes:** las pestañas Avisos, Historial y Ajustes están escondidas detrás del candado «Jefes». Se bloquean solas tras
+  10 minutos sin tocar nada y con el botón del candado. El PIN se cambia en Ajustes → Otros.
+- **Avisos:** «Avisar de un problema» (en el cuadro de cualquier dispositivo) deja un aviso con quién y qué. Sale como insignia
+  en el cuadro, en un banner de «Ahora» y al coger ese dispositivo. Los jefes los ven en Avisos y los marcan como resueltos.
+- **Mensajes:** al coger una máquina sale «Revisa el agua y el estado antes de coger la máquina»; al dejar un móvil o lector,
+  «Asegúrate de dejar bien conectado el dispositivo en carga».
