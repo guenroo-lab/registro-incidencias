@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icono-192.png">
 <link rel="apple-touch-icon" href="icono-180.png">
-<title>Registro de dispositivos</title>
+<title>Anubis · Registro de máquinas y dispositivos</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
@@ -912,7 +912,8 @@ ol.pasos li{margin:0 0 6px}
     campo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') entrar(); });
     vaciar($('vista')).appendChild(h('div', { class: 'acceso' }, [
       h('div', { class: 'brand-badge' }, [ic('candado')]),
-      h('h1', { class: 'brand-nombre', text: 'Registro de dispositivos' }),
+      h('h1', { class: 'brand-nombre', text: 'Anubis' }),
+      h('div', { class: 'brand-sub', text: 'Registro de máquinas y dispositivos' }),
       h('p', { text: 'Entra con el enlace que te han pasado: lleva la clave dentro. Si lo prefieres, pega aquí la clave (o el enlace entero).' }),
       err,
       h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'accClave', text: 'Clave' }), campo,
@@ -937,8 +938,8 @@ ol.pasos li{margin:0 0 6px}
     else estado = h('span', { class: 'estado-sync', text: '—' });
     cab.appendChild(h('div', { class: 'brand-badge' }, [ic('caja')]));
     cab.appendChild(h('div', { class: 'brand-titulo' }, [
-      h('h1', { class: 'brand-nombre', text: 'Dispositivos' }),
-      h('div', { class: 'brand-sub', text: 'Quién tiene qué y desde cuándo' })
+      h('h1', { class: 'brand-nombre', text: 'Anubis' }),
+      h('div', { class: 'brand-sub', text: 'Máquinas y dispositivos: quién tiene qué' })
     ]));
     cab.appendChild(h('div', { class: 'brand-acciones' }, [
       estado,
