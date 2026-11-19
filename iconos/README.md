@@ -24,3 +24,12 @@ return salida;
 
 Apps Script no deja poner `apple-touch-icon`, que es el que usa el iPhone: allí el icono del acceso directo puede
 seguir saliendo como una letra. En Android (Chrome) debería salir la T.
+
+## La «K» de Kairos
+
+Cuadrado rojo Taisa con la K en la letra de rotulador del nombre «Kairos» (Permanent Marker), en cuatro tamaños:
+
+- `https://guenroo-lab.github.io/registro-incidencias/iconos/kairos-k-512.png`
+- `https://guenroo-lab.github.io/registro-incidencias/iconos/kairos-k-192.png` (la que usa Kairos en la pestaña)
+- `https://guenroo-lab.github.io/registro-incidencias/iconos/kairos-k-180.png` (iPhone)
+- `https://guenroo-lab.github.io/registro-incidencias/iconos/kairos-k-64.png`
