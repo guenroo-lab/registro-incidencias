@@ -189,6 +189,16 @@ input[type=date]{min-width:0;max-width:100%}
 .rejilla .tarjeta{margin-bottom:0;display:flex;flex-direction:column}
 .rejilla .tarjeta .fila-botones{margin-top:auto;padding-top:12px}
 .estado-linea{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 0;font-size:14px;font-weight:700}
+.secciones{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.seccion{position:relative;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:4px;min-height:104px;padding:14px 16px;border-radius:20px;border:2px solid var(--ink-700);background:var(--ink-850);color:var(--text-300);font-family:inherit;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:transform .12s;min-width:0}
+.seccion:active{transform:scale(.97)}
+.seccion svg.i{width:30px;height:30px}
+.seccion .sec-nombre{font-size:20px;font-weight:900;letter-spacing:-.01em;line-height:1.1}
+.seccion .sec-cuenta{font-size:12.5px;font-weight:700;opacity:.9}
+.seccion .sec-marca{position:absolute;top:10px;right:10px;display:none}
+.seccion .sec-marca svg.i{width:20px;height:20px}
+.seccion[aria-checked="true"]{background:var(--accent-dim);border-color:var(--accent);color:var(--accent-text);box-shadow:0 8px 20px -12px var(--accent-glow)}
+.seccion[aria-checked="true"] .sec-marca{display:block}
 .resumen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 .resumen .tarjeta{margin-bottom:0;padding:12px 14px}
 .resumen .tarjeta.activa{outline:2px solid var(--accent);outline-offset:-2px}
@@ -413,7 +423,7 @@ body.modal-abierto{overflow:hidden}
   // ── Estado ────────────────────────────────────────────────────────────────
   var S = {
     clave: null, est: null, desfase: 0, ultima: 0, cargando: false, error: null,
-    tab: 'ahora', q: '', grupo: '', estado: '', vista: (lsGet('rd_vista') === 'lista' ? 'lista' : 'cuadros'),
+    tab: 'ahora', q: '', seccion: (lsGet('rd_seccion') === 'dispositivos' ? 'dispositivos' : 'maquinas'), estado: '', vista: (lsGet('rd_vista') === 'lista' ? 'lista' : 'cuadros'),
     aj: 'disp', verArchivados: false,
     hist: { filas: [], mas: false, cargando: false, f: { dispositivo_id: '', persona: '', accion: '', desde: '', hasta: '' } },
     yo: lsGet('rd_yo') || '', modal: null, temporizador: null,
@@ -719,17 +729,32 @@ body.modal-abierto{overflow:hidden}
         onclick: function () { S.vista = x[0]; lsSet('rd_vista', x[0]); montarAhora(); pintarAhora(); } }, [ic(x[0])]);
     }));
     v.appendChild(h('div', { id: 'bannerAvisos' }));
+    v.appendChild(h('div', { class: 'secciones', id: 'secciones', role: 'radiogroup', 'aria-label': 'Qué quieres ver' }));
     v.appendChild(h('div', { class: 'resumen', id: 'resumen' }));
     v.appendChild(h('div', { class: 'fila-buscar' }, [buscador, conmutador]));
-    v.appendChild(h('div', { class: 'chips-scroll', id: 'chipsGrupo', role: 'group', 'aria-label': 'Tipo' }));
     v.appendChild(h('div', { id: 'lista' }));
   }
 
   function pintarAhora() {
     if (S.tab !== 'ahora' || !S.est || S.montado !== 'ahora') return;
-    var todos = S.est.dispositivos.filter(function (d) { return d.activo; });
+    var activos = S.est.dispositivos.filter(function (d) { return d.activo; });
+    var deSeccion = function (sec) { return activos.filter(function (d) { return (d.grupo === 'Máquina') === (sec === 'maquinas'); }); };
+    var todos = deSeccion(S.seccion);
     var libres = todos.filter(function (d) { return !d.tiene; }).length;
     var usados = todos.length - libres;
+
+    // dos botones grandes: Máquinas / Dispositivos (móviles, lectores, ordenadores, impresoras…)
+    var sec = vaciar($('secciones'));
+    [['maquinas', 'Máquinas', 'maquina'], ['dispositivos', 'Dispositivos', 'movil']].forEach(function (x) {
+      var del = deSeccion(x[0]), lib = del.filter(function (d) { return !d.tiene; }).length;
+      var cuenta = del.length ? lib + (lib === 1 ? ' libre' : ' libres') + ' · ' + (del.length - lib) + ' en uso' : 'Sin nada todavía';
+      sec.appendChild(h('button', {
+        type: 'button', class: 'seccion', role: 'radio', 'aria-checked': S.seccion === x[0] ? 'true' : 'false',
+        'aria-label': x[1] + ', ' + cuenta,
+        onclick: function () { if (S.seccion === x[0]) return; S.seccion = x[0]; lsSet('rd_seccion', x[0]); pintarAhora(); }
+      }, [ic(x[2]), h('span', { class: 'sec-nombre', text: x[1] }), h('span', { class: 'sec-cuenta', text: cuenta }),
+          h('span', { class: 'sec-marca' }, [ic('check')])]));
+    });
 
     var ban = vaciar($('bannerAvisos'));
     var avAbiertos = S.est.avisos || [];
@@ -755,21 +780,8 @@ body.modal-abierto{overflow:hidden}
       ]));
     }
 
-    var chips = vaciar($('chipsGrupo'));
-    var presentes = GRUPOS_DISP.filter(function (g) { return todos.some(function (d) { return d.grupo === g; }); });
-    if (presentes.length > 1) {
-      chips.classList.remove('oculto');
-      chips.appendChild(h('button', { type: 'button', class: 'pick', 'aria-pressed': S.grupo === '' ? 'true' : 'false', onclick: function () { S.grupo = ''; pintarAhora(); } }, ['Todos ' + todos.length]));
-      presentes.forEach(function (g) {
-        var n = todos.filter(function (d) { return d.grupo === g; }).length;
-        chips.appendChild(h('button', { type: 'button', class: 'pick', 'aria-pressed': S.grupo === g ? 'true' : 'false', onclick: function () { S.grupo = S.grupo === g ? '' : g; pintarAhora(); } },
-          [ic(ICONO_GRUPO[g]), PLURAL_GRUPO[g] + ' ' + n]));
-      });
-    } else { chips.classList.add('oculto'); }
-
     var q = norm(S.q);
     var lista = todos.filter(function (d) {
-      if (S.grupo && d.grupo !== S.grupo) return false;
       if (S.estado === 'libre' && d.tiene) return false;
       if (S.estado === 'uso' && !d.tiene) return false;
       if (q && norm(d.nombre + ' ' + (d.serie || '') + ' ' + (d.tiene || '') + ' ' + d.grupo).indexOf(q) === -1) return false;
@@ -783,10 +795,20 @@ body.modal-abierto{overflow:hidden}
 
     var cont = vaciar($('lista'));
     if (!todos.length) {
-      cont.appendChild(h('div', { class: 'vacio', text: 'Todavía no hay dispositivos. Añádelos en Ajustes.' }));
+      cont.appendChild(h('div', { class: 'vacio', text: S.seccion === 'maquinas' ? 'Todavía no hay máquinas. Añádelas en Ajustes.' : 'Todavía no hay dispositivos. Añádelos en Ajustes.' }));
       return;
     }
-    if (!lista.length) { cont.appendChild(h('div', { class: 'vacio', text: 'No hay nada con esos filtros.' })); return; }
+    if (!lista.length) {
+      var otra = S.seccion === 'maquinas' ? 'dispositivos' : 'maquinas';
+      var enOtra = q ? deSeccion(otra).filter(function (d) { return norm(d.nombre + ' ' + (d.serie || '') + ' ' + (d.tiene || '') + ' ' + d.grupo).indexOf(q) !== -1; }).length : 0;
+      var vacio = h('div', { class: 'vacio' }, [h('div', { text: 'No hay nada con esos filtros.' })]);
+      if (enOtra) {
+        vacio.appendChild(h('button', { type: 'button', class: 'pick', style: 'margin-top:12px', onclick: function () { S.seccion = otra; lsSet('rd_seccion', otra); pintarAhora(); } },
+          ['Hay ' + enOtra + (enOtra === 1 ? ' resultado' : ' resultados') + ' en ' + (otra === 'maquinas' ? 'Máquinas' : 'Dispositivos')]));
+      }
+      cont.appendChild(vacio);
+      return;
+    }
     if (S.vista === 'lista') {
       var rej = h('div', { class: 'rejilla' });
       lista.forEach(function (d) { rej.appendChild(tarjetaDispositivo(d)); });
@@ -1294,7 +1316,7 @@ body.modal-abierto{overflow:hidden}
   function editarItem(esDisp, x) {
     var nombre = campoTexto('fNombre', 'Nombre', x ? x.nombre : '', esDisp ? 'Ej.: Retráctil 12' : 'Ej.: Alex Rios', esDisp ? 80 : 60);
     var serie = esDisp ? campoTexto('fSerie', 'Número de serie o código (opcional)', x ? x.serie : '', 'Ej.: R14 / P21120R02353') : null;
-    var grupo = campoPicks(esDisp ? 'Tipo' : 'Grupo', esDisp ? GRUPOS_DISP : GRUPOS_PERS, x ? x.grupo : (esDisp ? (S.grupo || 'Máquina') : 'Operario'));
+    var grupo = campoPicks(esDisp ? 'Tipo' : 'Grupo', esDisp ? GRUPOS_DISP : GRUPOS_PERS, x ? x.grupo : (esDisp ? (S.seccion === 'dispositivos' ? 'Móvil / lector' : 'Máquina') : 'Operario'));
     var cuerpo = h('div', null, [nombre.el, grupo.el, serie ? serie.el : null]);
     abrirModal({
       titulo: (x ? 'Editar ' : 'Añadir ') + (esDisp ? 'dispositivo' : 'persona'), cuerpo: cuerpo, enfoque: function () { return nombre.input; },
