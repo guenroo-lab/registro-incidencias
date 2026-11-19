@@ -291,6 +291,15 @@ body.modal-abierto{overflow:hidden}
 .toast.ok{background:#14935a;color:#fff}
 .toast span{flex:1}
 
+/* ——— cartel grande de 2 s al coger una máquina / soltar un móvil ——— */
+.cartel{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,8,12,.74);cursor:pointer;-webkit-tap-highlight-color:transparent;opacity:1;transition:opacity .25s}
+.cartel.sale{opacity:0}
+.cartel-caja{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%;max-width:420px;padding:34px 22px 30px;border-radius:28px;background:linear-gradient(180deg,#f6b73c 0%,#e0920f 100%);color:#241400;text-align:center;box-shadow:0 30px 80px -20px rgba(0,0,0,.7),inset 0 1px 0 rgba(255,255,255,.35);animation:cartelEntra .22s ease-out}
+.cartel-caja svg.i{width:88px;height:88px;stroke-width:1.7}
+.cartel-titulo{font-size:31px;font-weight:900;line-height:1.1;letter-spacing:-.015em}
+.cartel-texto{font-size:16px;font-weight:800;opacity:.8}
+@keyframes cartelEntra{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+
 /* ——— acceso ——— */
 .acceso{max-width:420px;margin:8vh auto 0;text-align:center}
 .acceso .brand-badge{margin:0 auto 14px}
@@ -543,6 +552,22 @@ body.modal-abierto{overflow:hidden}
     var t = h('div', { class: 'toast' + (tipo ? ' ' + tipo : '') }, [h('span', { text: texto })]);
     cont.appendChild(t);
     setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, tipo === 'mal' ? 6000 : 3500);
+  }
+
+  // cartel grande y breve (unos 2 s; un toque lo quita antes): recordatorio al coger una máquina o soltar un móvil
+  var CARTEL_MS = 2000;
+  function cartel(o) {
+    var previo = document.querySelector('.cartel');
+    if (previo && previo.parentNode) previo.parentNode.removeChild(previo);
+    var el = h('div', { class: 'cartel', role: 'alert', 'aria-live': 'assertive' }, [
+      h('div', { class: 'cartel-caja' }, [ic(o.icono), h('div', { class: 'cartel-titulo', text: o.titulo }), o.texto ? h('div', { class: 'cartel-texto', text: o.texto }) : null])
+    ]);
+    var t1, t2;
+    function quitar() { clearTimeout(t1); clearTimeout(t2); if (el.parentNode) el.parentNode.removeChild(el); }
+    el.addEventListener('click', quitar);
+    document.body.appendChild(el);
+    t1 = setTimeout(function () { el.classList.add('sale'); }, CARTEL_MS - 250);
+    t2 = setTimeout(quitar, CARTEL_MS);
   }
 
   function abrirModal(o) {
@@ -974,6 +999,7 @@ body.modal-abierto{overflow:hidden}
           m.cerrar();
           pintarTodo();
           if (o.hecho) toast(o.hecho(elegido, r), 'ok');
+          if (o.cartel && !(r && r.ya)) cartel(o.cartel);
         }).catch(function (e) {
           if (silencio(e)) return;
           m.ocupar(false); principal.el.lastChild.textContent = texto;
@@ -1005,7 +1031,8 @@ body.modal-abierto{overflow:hidden}
       boton: function (p) { return 'Coger como ' + p; },
       notaPlaceholder: 'Nota (opcional): para qué, dónde estará…',
       enviar: function (p, nota) { return llamar('coger', { dispositivo_id: d.id, persona: p, nota: nota, forzar: !!d.tiene }); },
-      hecho: function (p) { return p + ' ha cogido ' + d.nombre; }
+      hecho: function (p) { return p + ' ha cogido ' + d.nombre; },
+      cartel: d.grupo === 'Máquina' ? { icono: 'maquina', titulo: 'Revisa el agua y el estado de la máquina', texto: d.nombre } : null
     });
   }
 
@@ -1020,7 +1047,8 @@ body.modal-abierto{overflow:hidden}
       boton: function (p) { return norm(p) === norm(d.tiene) ? 'Dejar (' + p + ')' : 'Registrar el «dejar» como ' + p; },
       notaPlaceholder: 'Nota (opcional): dónde lo dejas, avería…',
       enviar: function (p, nota) { return llamar('dejar', { dispositivo_id: d.id, persona: p, nota: nota }); },
-      hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba libre' : d.nombre + ' queda libre'; }
+      hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba libre' : d.nombre + ' queda libre'; },
+      cartel: d.grupo === 'Móvil / lector' ? { icono: 'movil', titulo: 'Asegúrate de que queda puesto en carga', texto: d.nombre } : null
     });
   }
 
