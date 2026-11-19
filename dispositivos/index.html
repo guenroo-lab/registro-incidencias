@@ -1,0 +1,1277 @@
+<!DOCTYPE html>
+<html lang="es" data-kmode="dark" data-ktheme="taisared">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="color-scheme" content="dark light">
+<title>Registro de dispositivos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Permanent+Marker&display=swap" rel="stylesheet">
+<script>(function(){try{
+  var m='dark',t='taisared';
+  try{m=localStorage.getItem('taisa_mode_pick')||'dark';t=localStorage.getItem('taisa_theme_pick')||'taisared';}catch(e){}
+  var OK={indigo:['dark'],lmgreen:['dark','light'],taisared:['dark','light'],amber:['dark'],retro80s:['dark','light']};
+  if(m!=='light')m='dark';
+  if(!OK[t]||OK[t].indexOf(m)===-1)t='taisared';
+  document.documentElement.setAttribute('data-kmode',m);
+  document.documentElement.setAttribute('data-ktheme',t);
+}catch(e){}})();</script>
+<style>
+/* ============================================================
+   Diseño Taisa: el mismo sistema que RYU y Kairos (tokens ink/text/acento, modo claro/oscuro × acento,
+   tarjetas con degradado y borde de color, botones premium de 46 px, pestañas con icono, modales propios).
+   Los tokens son los de RYU/Estilos.html; las mismas claves de tema (taisa_mode_pick / taisa_theme_pick)
+   que usa «Registro de incidencias», así que el tema elegido en una vale para la otra.
+   ============================================================ */
+:root{
+  color-scheme:dark;
+  --ink-950:#090d13;--ink-900:#0f151e;--ink-850:#141b26;--ink-800:#1a2230;--ink-700:#28323f;--ink-600:#3a4757;
+  --text-100:#eef2f7;--text-300:#c3ccd8;--text-500:#8b97a8;--text-600:#66707e;
+  --ok:#34d17a;--ok-ink:#062b12;--ok-bg:#0e2a1a;--ok-fg:#7fe0a4;--ok-line:#1f6b40;
+  --warn-bg:#4a2c0b;--warn-fg:#ffcd8a;--warn-line:#7a4a15;
+  --danger-bg:#3a1414;--danger-fg:#ffb0ab;--danger-line:#7a2a24;
+  --info-bg:#12213f;--info-fg:#8fb2ff;--info-line:#2b4a8a;
+  --chip-marbella-bg:#12213f;--chip-marbella-fg:#8fb2ff;
+  --chip-mijas-bg:#26123b;--chip-mijas-fg:#d6a6ff;
+  --chip-malaga-bg:#0f2a1a;--chip-malaga-fg:#7fe0a4;
+  --chip-granada-bg:#3a1424;--chip-granada-fg:#fda4af;
+  --radius-card:14px;--radius-btn:12px;--radius-chip:999px;
+  --shadow-card:0 1px 0 rgba(255,255,255,.03) inset,0 8px 24px -12px rgba(0,0,0,.6);
+  --accent:#FF1493;--accent-ink:#ffffff;--accent-dim:#3a0f28;--accent-line:#a80f5c;--accent-deep:#b00e68;
+  --accent-glow:rgba(255,20,147,.38);--accent-soft:rgba(255,20,147,.18);--accent-text:var(--accent);
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  --font-brand:'Permanent Marker',cursive;
+}
+[data-kmode="light"]{
+  color-scheme:light;
+  --ink-950:#f6f4f1;--ink-900:#ffffff;--ink-850:#fbfaf8;--ink-800:#e8e4de;--ink-700:#d7d2ca;--ink-600:#b6afa4;
+  --text-100:#201f1c;--text-300:#4a473f;--text-500:#7a7568;--text-600:#8a8574;
+  --ok:#1a8f4c;--ok-ink:#eafff2;--ok-bg:#e2f6e9;--ok-fg:#14683a;--ok-line:#9fd9b5;
+  --warn-bg:#fff1d6;--warn-fg:#92400e;--warn-line:#f0c878;
+  --danger-bg:#fde7e5;--danger-fg:#b91c1c;--danger-line:#f4b3ac;
+  --info-bg:#e5edff;--info-fg:#1d4ed8;--info-line:#b5c8f5;
+  --chip-marbella-bg:#e5edff;--chip-marbella-fg:#1d4ed8;
+  --chip-mijas-bg:#f2e6ff;--chip-mijas-fg:#7e22ce;
+  --chip-malaga-bg:#e2f6e9;--chip-malaga-fg:#15803d;
+  --chip-granada-bg:#ffe4e6;--chip-granada-fg:#be123c;
+  --shadow-card:0 1px 2px rgba(30,25,15,.04),0 10px 24px -14px rgba(30,25,15,.18);
+  --accent-text:var(--accent-deep);
+}
+[data-ktheme="indigo"]  {--accent:#4c7dff;--accent-ink:#ffffff;--accent-dim:#1c2b52;--accent-line:#3a55a8;--accent-deep:#3459c4;--accent-glow:rgba(76,125,255,.38);--accent-soft:rgba(76,125,255,.20);--accent-text:#7a9cff}
+[data-ktheme="lmgreen"] {--accent:#3fb54a;--accent-ink:#04220a;--accent-dim:#123420;--accent-line:#2f7a3c;--accent-deep:#35a042;--accent-glow:rgba(63,181,74,.36);--accent-soft:rgba(63,181,74,.20)}
+[data-ktheme="taisared"]{--accent:#e2263a;--accent-ink:#ffffff;--accent-dim:#3a1216;--accent-line:#8a2530;--accent-deep:#a81a2a;--accent-glow:rgba(226,38,58,.38);--accent-soft:rgba(226,38,58,.20);--accent-text:#ff5468}
+[data-ktheme="amber"]   {--accent:#f0a020;--accent-ink:#241400;--accent-dim:#3a2708;--accent-line:#93672a;--accent-deep:#c47e0c;--accent-glow:rgba(240,160,32,.36);--accent-soft:rgba(240,160,32,.20)}
+[data-ktheme="retro80s"]{--accent:#FF1493;--accent-ink:#ffffff;--accent-dim:#3a0f28;--accent-line:#a80f5c;--accent-deep:#b00e68;--accent-glow:rgba(255,20,147,.38);--accent-soft:rgba(255,20,147,.18)}
+[data-kmode="light"][data-ktheme="lmgreen"] {--accent:#2f9e3f;--accent-ink:#ffffff;--accent-dim:#e4f5e7;--accent-line:#a9dab4;--accent-deep:#217a2f;--accent-glow:rgba(47,158,63,.30);--accent-soft:rgba(47,158,63,.16);--accent-text:#217a2f}
+[data-kmode="light"][data-ktheme="taisared"]{--accent:#dc1a23;--accent-ink:#ffffff;--accent-dim:#fde6e6;--accent-line:#f0aaac;--accent-deep:#a8121a;--accent-glow:rgba(220,26,35,.30);--accent-soft:rgba(220,26,35,.14);--accent-text:#a8121a}
+[data-kmode="light"][data-ktheme="retro80s"]{--accent:#d6127a;--accent-ink:#ffffff;--accent-dim:#ffe0f0;--accent-line:#ffb3d9;--accent-deep:#9d0c5a;--accent-glow:rgba(214,18,122,.30);--accent-soft:rgba(214,18,122,.14);--accent-text:#9d0c5a}
+
+*{box-sizing:border-box}
+html,body{background:var(--ink-950)}
+body{margin:0;padding:14px 14px calc(40px + env(safe-area-inset-bottom));color:var(--text-100);font-family:var(--font);-webkit-font-smoothing:antialiased;transition:background .15s ease,color .15s ease}
+::selection{background:var(--accent-soft)}
+:focus-visible{outline:2px solid var(--accent-line);outline-offset:2px}
+button,input,select,textarea{font-family:inherit}
+h1{font-size:19px;font-weight:800;margin:0 0 4px;letter-spacing:-.01em}
+h2{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-500);margin:18px 0 8px}
+.oculto{display:none!important}
+.mono{font-variant-numeric:tabular-nums}
+.solo-lectores{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+svg.i{width:18px;height:18px;flex:none;vertical-align:-3px}
+#app{max-width:520px;margin:0 auto}
+@media (min-width:760px){#app{max-width:860px}}
+@media (min-width:1100px){#app{max-width:1180px}}
+
+/* ——— cabecera ——— */
+.brand-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 12px;margin-bottom:12px}
+.brand-badge{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--accent-ink);
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent-deep) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px -8px var(--accent-glow)}
+.brand-badge svg.i{width:26px;height:26px}
+[data-ktheme="retro80s"] .brand-head{padding-top:16px;position:relative}
+[data-ktheme="retro80s"] .brand-head::before{content:"";position:absolute;top:0;left:0;right:0;height:6px;border-radius:3px;
+  background:linear-gradient(135deg,#FF1493 0%,#FF1493 20%,#00C5B5 20%,#00C5B5 40%,#3B2F85 40%,#3B2F85 60%,#FFD700 60%,#FFD700 80%,#FF2400 80%,#FF2400 100%)}
+.brand-titulo{flex:1 1 180px;min-width:0}
+.brand-nombre{font-family:var(--font-brand);font-size:30px;line-height:1.05;color:var(--text-100);margin:0}
+.brand-sub{font-size:12.5px;color:var(--text-500);margin-top:3px}
+.brand-acciones{display:flex;align-items:center;gap:8px}
+.estado-sync{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;padding:4px 10px;border-radius:var(--radius-chip);background:var(--ink-800);color:var(--text-300);white-space:nowrap}
+.estado-sync.ok{color:var(--ok)}
+.estado-sync.mal{color:var(--danger-fg);background:var(--danger-bg)}
+.estado-sync.trabajando{color:var(--info-fg);background:var(--info-bg)}
+
+/* ——— pestañas ——— */
+.tabs{display:flex;background:var(--ink-900);border:1px solid var(--ink-800);border-radius:var(--radius-card);padding:4px;margin-bottom:12px;gap:2px;position:sticky;top:6px;z-index:30;box-shadow:var(--shadow-card)}
+.tabs button{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px 2px;border-radius:calc(var(--radius-card) - 4px);
+  border:0;background:transparent;color:var(--text-500);font-size:11px;font-weight:700;min-height:48px;position:relative;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tabs button svg.i{width:20px;height:20px}
+.tabs button.activa{background:var(--accent-dim);color:var(--accent-text)}
+.badge-tab{position:absolute;top:3px;left:calc(50% + 8px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:#2563eb;color:#fff;font-size:11px;font-weight:800;line-height:18px;text-align:center}
+
+/* ——— botones ——— */
+.btn{cursor:pointer;border:0;border-radius:var(--radius-btn);padding:11px 16px;min-height:46px;font-size:14px;font-weight:800;color:var(--accent-ink);
+  background:linear-gradient(180deg,var(--accent) 0%,var(--accent-deep) 100%);
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;-webkit-tap-highlight-color:transparent;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 6px 16px -8px var(--accent-glow),0 1px 2px rgba(14,22,33,.18);
+  transition:filter .16s,box-shadow .16s,transform .12s}
+@media (hover:hover){.btn:not(:disabled):hover{filter:brightness(1.07)}}
+.btn:active{transform:scale(.97);filter:brightness(.97)}
+.btn:disabled{opacity:.5;cursor:default;transform:none}
+.btn.grande{min-height:56px;font-size:16px;width:100%}
+.btn.secundario{background:var(--ink-800);color:var(--text-300);box-shadow:none}
+.btn.borde{background:var(--ink-900);color:var(--text-100);border:1px solid var(--ink-700);box-shadow:none}
+.btn.peligro{background:var(--danger-bg);color:var(--danger-fg);border:1px solid var(--danger-line);box-shadow:none}
+.btn.ok{background:var(--ok);color:var(--ok-ink);box-shadow:none}
+.btn.mini{min-height:38px;padding:7px 12px;font-size:12.5px;border-radius:10px}
+.btn.ancho{width:100%}
+.fila-botones{display:flex;gap:8px;flex-wrap:wrap}
+.fila-botones>.btn{flex:1 1 130px}
+
+/* ——— tarjetas ——— */
+.tarjeta{background:linear-gradient(160deg,var(--ink-850) 0%,var(--ink-900) 100%);border:1px solid var(--ink-800);border-top:1px solid rgba(255,255,255,.06);
+  border-radius:var(--radius-card);padding:14px 16px;margin-bottom:12px;box-shadow:var(--shadow-card)}
+[data-kmode="light"] .tarjeta{background:var(--ink-900);border-top-color:var(--ink-800)}
+.tarjeta.borde-acento{border-left:4px solid var(--accent)}
+.tarjeta.borde-ok{border-left:4px solid var(--ok)}
+.tarjeta.borde-aviso{border-left:4px solid #f0a020}
+.tarjeta.borde-mal{border-left:4px solid #e5322d}
+.tarjeta.clic{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.tarjeta.clic:active{transform:scale(.985)}
+.tarjeta-cabecera{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:6px}
+.etiqueta{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text-500)}
+.valor-grande{font-size:30px;font-weight:900;letter-spacing:-.01em;line-height:1.1;font-variant-numeric:tabular-nums}
+.meta{color:var(--text-500);font-size:12.5px}
+.nombre{font-size:16.5px;font-weight:900;letter-spacing:-.005em;overflow-wrap:anywhere}
+
+/* ——— chips y piezas pequeñas ——— */
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:800;padding:3px 10px;border-radius:var(--radius-chip);white-space:nowrap;background:var(--ink-800);color:var(--text-300)}
+.chip svg.i{width:14px;height:14px;vertical-align:-2px}
+.chip.ok{background:var(--ok-bg);color:var(--ok-fg)}
+.chip.aviso{background:var(--warn-bg);color:var(--warn-fg)}
+.chip.mal{background:var(--danger-bg);color:var(--danger-fg)}
+.chip.info{background:var(--info-bg);color:var(--info-fg)}
+.chip.acento{background:var(--accent-dim);color:var(--accent-text)}
+.pick{display:inline-flex;align-items:center;justify-content:center;gap:7px;min-height:42px;padding:0 14px;border-radius:999px;background:var(--ink-850);border:1px solid var(--ink-700);color:var(--text-300);font-size:13px;font-weight:700;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.pick .dot{width:11px;height:11px;border-radius:50%;background:var(--accent)}
+.pick[data-for="indigo"] .dot{background:#4c7dff}.pick[data-for="lmgreen"] .dot{background:#3fb54a}.pick[data-for="taisared"] .dot{background:#e2263a}.pick[data-for="amber"] .dot{background:#f0a020}
+.pick[data-for="retro80s"] .dot{background:linear-gradient(135deg,#FF1493 0%,#FF1493 20%,#00C5B5 20%,#00C5B5 40%,#3B2F85 40%,#3B2F85 60%,#FFD700 60%,#FFD700 80%,#FF2400 80%,#FF2400 100%)}
+.pick.active,.pick[aria-pressed="true"]{background:var(--accent-dim);border-color:var(--accent-line);color:var(--accent-text)}
+.pick[data-hidden]{display:none}
+.fila-picks{display:flex;flex-wrap:wrap;gap:8px}
+.chips-scroll{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px 6px;scrollbar-width:none}
+.chips-scroll::-webkit-scrollbar{display:none}
+.chips-scroll .pick{flex:none}
+
+/* ——— formularios ——— */
+label.campo{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:var(--text-500);margin:0 0 5px}
+.grupo-campo{margin-bottom:12px}
+input[type=text],input[type=search],input[type=password],input[type=date],select,textarea{width:100%;font-size:16px;padding:12px 13px;background:var(--ink-950);border:1px solid var(--ink-700);border-radius:var(--radius-btn);color:var(--text-100);outline:none;min-height:46px}
+textarea{min-height:120px;resize:vertical;line-height:1.4}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input::placeholder,textarea::placeholder{color:var(--text-600)}
+.buscador{position:relative;margin-bottom:10px}
+.buscador svg.i{position:absolute;left:13px;top:14px;color:var(--text-500);pointer-events:none}
+.buscador input{padding-left:40px}
+.rejilla-filtros{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.rejilla-filtros>*{min-width:0}
+input[type=date]{min-width:0;max-width:100%}
+@media (min-width:760px){.rejilla-filtros{grid-template-columns:repeat(5,minmax(0,1fr))}}
+.rejilla-filtros .ancho2{grid-column:1 / -1}
+@media (min-width:760px){.rejilla-filtros .ancho2{grid-column:auto}}
+
+/* ——— listas ——— */
+.rejilla{display:grid;gap:12px;grid-template-columns:1fr}
+@media (min-width:760px){.rejilla{grid-template-columns:repeat(2,1fr)}}
+@media (min-width:1100px){.rejilla{grid-template-columns:repeat(3,1fr)}}
+.rejilla .tarjeta{margin-bottom:0;display:flex;flex-direction:column}
+.rejilla .tarjeta .fila-botones{margin-top:auto;padding-top:12px}
+.estado-linea{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:6px 0 0;font-size:14px;font-weight:700}
+.resumen{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.resumen .tarjeta{margin-bottom:0;padding:12px 14px}
+.resumen .tarjeta.activa{outline:2px solid var(--accent);outline-offset:-2px}
+.vacio{text-align:center;color:var(--text-500);padding:28px 12px;font-size:14px}
+.dia{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-500);margin:16px 2px 6px}
+.mov{display:flex;gap:12px;align-items:flex-start;padding:11px 14px;margin-bottom:8px}
+.mov-ico{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--accent-dim);color:var(--accent-text)}
+.mov-ico.dejar{background:var(--ok-bg);color:var(--ok-fg)}
+.mov-ico.auto{background:var(--info-bg);color:var(--info-fg)}
+.mov-cuerpo{min-width:0;flex:1}
+.mov-linea{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
+.mov-hora{font-size:12.5px;color:var(--text-500);font-variant-numeric:tabular-nums;white-space:nowrap}
+.fila-aj{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:8px}
+.fila-aj .cuerpo{flex:1;min-width:0}
+.fila-aj .acciones{display:flex;gap:6px;flex:none}
+.fila-aj .btn.mini{min-width:42px;padding:7px 10px}
+.segmentos{display:flex;background:var(--ink-900);border:1px solid var(--ink-800);border-radius:var(--radius-btn);padding:3px;gap:2px;margin-bottom:12px}
+.segmentos button{flex:1;border:0;background:transparent;color:var(--text-500);font-size:13px;font-weight:800;min-height:42px;border-radius:calc(var(--radius-btn) - 3px);cursor:pointer}
+.segmentos button.activa{background:var(--accent-dim);color:var(--accent-text)}
+.fila-titulo{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin:6px 0 10px}
+.fila-titulo .fila-botones>.btn{flex:0 1 auto}
+
+/* ——— tablero de cuadros ——— */
+.titulo-grupo{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 2px 10px;font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--text-300)}
+.titulo-grupo:first-child{margin-top:4px}
+.titulo-grupo .chip{text-transform:none;letter-spacing:0}
+.tablero{display:grid;gap:10px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:560px){.tablero{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (min-width:860px){.tablero{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media (min-width:1100px){.tablero{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.cuadro{display:flex;flex-direction:column;justify-content:space-between;gap:6px;text-align:left;aspect-ratio:1/1;min-height:132px;padding:12px;border-radius:18px;border:2px solid;cursor:pointer;font-family:inherit;color:inherit;
+  -webkit-tap-highlight-color:transparent;overflow:hidden;transition:transform .12s,filter .16s;min-width:0}
+.cuadro:active{transform:scale(.96)}
+@media (hover:hover){.cuadro:hover{filter:brightness(1.07)}}
+.cuadro.libre{background:linear-gradient(160deg,var(--ok-bg) 0%,var(--ink-900) 120%);border-color:var(--ok-line);color:var(--ok-fg)}
+.cuadro.uso{background:linear-gradient(180deg,var(--accent) 0%,var(--accent-deep) 100%);border-color:var(--accent-line);color:var(--accent-ink);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.22),0 8px 20px -10px var(--accent-glow)}
+.cuadro.viejo{background:linear-gradient(180deg,#f0a020 0%,#c47e0c 100%);border-color:#93672a;color:#241400;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 8px 20px -10px rgba(240,160,32,.5)}
+.cuadro-top{display:flex;align-items:center;justify-content:space-between}
+.cuadro-medio{flex:1;min-height:0;min-width:0}
+.cuadro-top svg.i{width:26px;height:26px;opacity:.92}
+.cuadro-num{font-size:32px;font-weight:900;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums}
+.cuadro-num.largo{font-size:19px;line-height:1.15;letter-spacing:-.01em;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.cuadro-nom{font-size:12px;line-height:1.25;font-weight:700;margin-top:4px;opacity:.88;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.cuadro.libre .cuadro-nom{color:var(--text-300);opacity:1}
+.cuadro-pie{display:flex;flex-direction:column;gap:1px;min-width:0}
+.cuadro-estado{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:900;letter-spacing:.08em}
+.cuadro-quien{font-size:15px;font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cuadro-desde{font-size:12px;font-weight:700;opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cuadro-desde svg.i{width:13px;height:13px;vertical-align:-2px}
+.barra{grid-column:1 / -1;height:10px;border-radius:6px;background:var(--ink-800);overflow:hidden;display:flex}
+.barra .b-libre{background:var(--ok)}
+.barra .b-uso{background:var(--accent)}
+.fila-buscar{display:flex;gap:8px;margin-bottom:10px}
+.fila-buscar .buscador{flex:1;margin:0;min-width:0}
+.fila-buscar .segmentos{margin:0;flex:none}
+.fila-buscar .segmentos button{flex:none;width:46px;min-height:44px;display:flex;align-items:center;justify-content:center}
+
+/* ——— elegir persona ——— */
+.grid-operarios{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 12px}
+.btn-operario{min-height:56px;border-radius:16px;border:2px solid var(--ink-700);background:var(--ink-900);color:var(--text-100);font-size:15px;font-weight:800;cursor:pointer;padding:8px 10px;-webkit-tap-highlight-color:transparent;overflow-wrap:anywhere}
+.btn-operario:active,.btn-operario.activo{background:var(--accent-dim);border-color:var(--accent);color:var(--accent-text)}
+.aviso-modal{background:var(--warn-bg);border:1px solid var(--warn-line);color:var(--warn-fg);border-radius:var(--radius-btn);padding:10px 12px;font-size:13.5px;line-height:1.4;margin:0 0 12px}
+.aviso-modal.info{background:var(--info-bg);border-color:var(--info-line);color:var(--info-fg)}
+.error-modal{color:var(--danger-fg);background:var(--danger-bg);border:1px solid var(--danger-line);border-radius:var(--radius-btn);padding:9px 12px;font-size:13.5px;margin:0 0 10px}
+
+/* ——— modales y avisos ——— */
+.kback{position:fixed;inset:0;background:rgba(5,8,12,.62);display:flex;align-items:center;justify-content:center;padding:14px;z-index:1000;overscroll-behavior:contain}
+.kmodal{background:var(--ink-900);border:1px solid var(--ink-800);border-radius:var(--radius-card);padding:18px;max-width:440px;width:100%;box-shadow:0 24px 60px -20px rgba(0,0,0,.6);max-height:90vh;max-height:90dvh;overflow:auto;overscroll-behavior:contain}
+.kmodal:focus{outline:none}
+.kmodal h3{font-size:17px;font-weight:900;margin:0 0 4px}
+.kmodal .sub-modal{margin:0 0 12px;font-size:13.5px;color:var(--text-500)}
+.kmodal p{margin:0 0 14px;font-size:14.5px;line-height:1.45;color:var(--text-300)}
+.kmodal .fila-botones{margin-top:10px;justify-content:flex-end}
+.kmodal .fila-botones>.btn{flex:1 1 120px}
+.kmodal-largo .fila-botones{position:sticky;bottom:-18px;z-index:2;margin:12px -18px -18px;padding:12px 18px 18px;background:var(--ink-900);border-top:1px solid var(--ink-800)}
+body.modal-abierto{overflow:hidden}
+.toasts{position:fixed;left:0;right:0;bottom:calc(12px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:8px;z-index:1100;pointer-events:none;padding:0 12px}
+.toast{pointer-events:auto;display:flex;align-items:center;gap:12px;max-width:480px;width:100%;padding:12px 14px;border-radius:14px;background:var(--text-100);color:var(--ink-950);font-size:14px;font-weight:700;box-shadow:0 12px 30px -12px rgba(0,0,0,.6)}
+.toast.mal{background:#c81e1e;color:#fff}
+.toast.ok{background:#14935a;color:#fff}
+.toast span{flex:1}
+
+/* ——— acceso ——— */
+.acceso{max-width:420px;margin:8vh auto 0;text-align:center}
+.acceso .brand-badge{margin:0 auto 14px}
+.acceso p{color:var(--text-300);font-size:14.5px;line-height:1.45;margin:0 0 14px}
+.acceso .grupo-campo{text-align:left}
+
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="brand-head" id="cabecera"></header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Secciones"></nav>
+  <main id="vista" aria-live="polite"></main>
+</div>
+<div class="toasts" id="toasts" role="status" aria-live="polite"></div>
+<noscript><p style="padding:20px">Esta página necesita JavaScript.</p></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  // ── Configuración ─────────────────────────────────────────────────────────
+  // Dirección de la función de borde que habla con Supabase (no lleva ningún secreto: sin la clave no da nada).
+  var API = window.REGISTRO_API || 'https://dbxlrnupiwemnarlxmcv.supabase.co/functions/v1/dispositivos';
+  var TZ = 'Europe/Madrid';
+  var REFRESCO_MS = 60000;
+  var GRUPOS_DISP = ['Máquina', 'Móvil / lector', 'Ordenador', 'Impresora', 'Otro'];
+  var GRUPOS_PERS = ['Jefe', 'Operario', 'Otro'];
+  var PLURAL_GRUPO = { 'Máquina': 'Máquinas', 'Móvil / lector': 'Móviles y lectores', 'Ordenador': 'Ordenadores', 'Impresora': 'Impresoras', 'Otro': 'Otros' };
+  var ICONO_GRUPO = { 'Máquina': 'maquina', 'Móvil / lector': 'movil', 'Ordenador': 'pc', 'Impresora': 'impresora', 'Otro': 'caja' };
+  var TEMAS_MODOS = { indigo: ['dark'], lmgreen: ['dark', 'light'], taisared: ['dark', 'light'], amber: ['dark'], retro80s: ['dark', 'light'] };
+
+  // ── Iconos (Lucide, licencia ISC) ─────────────────────────────────────────
+  var ICONOS = {
+    cuadros: '<rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/>',
+    lista: '<line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/>',
+    mano: '<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+    devolver: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+    cambio: '<path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/>',
+    caja: '<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><path d="m3.29 7 8.71 5 8.71-5"/>',
+    historial: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
+    ajustes: '<line x1="21" x2="14" y1="4" y2="4"/><line x1="10" x2="3" y1="4" y2="4"/><line x1="21" x2="12" y1="12" y2="12"/><line x1="8" x2="3" y1="12" y2="12"/><line x1="21" x2="16" y1="20" y2="20"/><line x1="12" x2="3" y1="20" y2="20"/><line x1="14" x2="14" y1="2" y2="6"/><line x1="8" x2="8" y1="10" y2="14"/><line x1="16" x2="16" y1="18" y2="22"/>',
+    buscar: '<circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/>',
+    refrescar: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+    mas: '<path d="M5 12h14"/><path d="M12 5v14"/>',
+    x: '<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+    check: '<path d="M20 6 9 17l-5-5"/>',
+    lapiz: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
+    papelera: '<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+    recuperar: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+    descargar: '<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/>',
+    clip: '<rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>',
+    llave: '<path d="m15.5 7.5 2.3 2.3a1 1 0 0 0 1.4 0l2.1-2.1a1 1 0 0 0 0-1.4L19 4"/><path d="m21 2-9.6 9.6"/><circle cx="7.5" cy="15.5" r="5.5"/>',
+    candado: '<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
+    salir: '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/>',
+    alerta: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
+    reloj: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+    maquina: '<path d="M12 12H5a2 2 0 0 0-2 2v5"/><circle cx="13" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><path d="M8 19h3m5-17v17h6M6 12V7c0-1.1.9-2 2-2h3l5 5"/>',
+    movil: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+    pc: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
+    impresora: '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>'
+  };
+  function ic(nombre) {
+    var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    s.setAttribute('class', 'i'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none');
+    s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2');
+    s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true');
+    s.innerHTML = ICONOS[nombre] || '';
+    return s;
+  }
+
+  // ── Utilidades ────────────────────────────────────────────────────────────
+  function h(tag, a, kids) {
+    var e = document.createElement(tag);
+    if (a) {
+      for (var k in a) {
+        if (!Object.prototype.hasOwnProperty.call(a, k)) continue;
+        var v = a[k];
+        if (v === null || v === undefined || v === false) continue;
+        if (k === 'class') e.className = v;
+        else if (k === 'text') e.textContent = v;
+        else if (k === 'value') e.value = v;
+        else if (k.slice(0, 2) === 'on') e.addEventListener(k.slice(2), v);
+        else e.setAttribute(k, v === true ? '' : v);
+      }
+    }
+    if (kids !== undefined && kids !== null) {
+      (Array.isArray(kids) ? kids : [kids]).forEach(function (c) {
+        if (c === null || c === undefined || c === false) return;
+        e.appendChild(typeof c === 'object' ? c : document.createTextNode(String(c)));
+      });
+    }
+    return e;
+  }
+  function vaciar(n) { while (n.firstChild) n.removeChild(n.firstChild); return n; }
+  function $(id) { return document.getElementById(id); }
+  function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { if (v === null) localStorage.removeItem(k); else localStorage.setItem(k, v); } catch (e) {} }
+  function norm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+  function clave2(a, b) { return String(a).localeCompare(String(b), 'es', { numeric: true, sensitivity: 'base' }); }
+
+  var fmtHora = new Intl.DateTimeFormat('es-ES', { timeZone: TZ, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
+  var fmtDiaCorto = new Intl.DateTimeFormat('es-ES', { timeZone: TZ, day: '2-digit', month: '2-digit' });
+  var fmtDiaLargo = new Intl.DateTimeFormat('es-ES', { timeZone: TZ, day: '2-digit', month: '2-digit', year: 'numeric' });
+  var fmtISO = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+  function ahora() { return Date.now() + (S.desfase || 0); }
+  function diaISO(ms) { return fmtISO.format(new Date(ms)); }
+  function hora(ms) { return fmtHora.format(new Date(ms)); }
+  function diaRelativo(ms) {
+    var hoy = diaISO(ahora()), ayer = diaISO(ahora() - 86400000), d = diaISO(ms);
+    if (d === hoy) return 'hoy';
+    if (d === ayer) return 'ayer';
+    return fmtDiaCorto.format(new Date(ms));
+  }
+  // «las 07:42» / «ayer 18:10» / «17/11 07:42»
+  function cuando(ms) {
+    var r = diaRelativo(ms);
+    return r === 'hoy' ? 'las ' + hora(ms) : r + ' ' + hora(ms);
+  }
+  function duracion(ms) {
+    var min = Math.max(0, Math.round(ms / 60000));
+    if (min < 1) return 'menos de 1 min';
+    if (min < 60) return min + ' min';
+    var hh = Math.floor(min / 60), mm = min % 60;
+    if (hh < 48) return hh + ' h' + (mm ? ' ' + mm + ' min' : '');
+    return Math.floor(hh / 24) + ' días';
+  }
+
+  // ── Estado ────────────────────────────────────────────────────────────────
+  var S = {
+    clave: null, est: null, desfase: 0, ultima: 0, cargando: false, error: null,
+    tab: 'ahora', q: '', grupo: '', estado: '', vista: (lsGet('rd_vista') === 'lista' ? 'lista' : 'cuadros'),
+    aj: 'disp', verArchivados: false,
+    hist: { filas: [], mas: false, cargando: false, f: { dispositivo_id: '', persona: '', accion: '', desde: '', hasta: '' } },
+    yo: lsGet('rd_yo') || '', modal: null, temporizador: null
+  };
+
+  // ── Llamadas al servidor ──────────────────────────────────────────────────
+  function llamar(accion, args) {
+    var ctl = typeof AbortController === 'function' ? new AbortController() : null;
+    var tm = ctl ? setTimeout(function () { ctl.abort(); }, 20000) : null;
+    return fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=UTF-8' },    // petición «simple»: sin preflight de CORS
+      body: JSON.stringify({ clave: S.clave, accion: accion, args: args || {} }),
+      signal: ctl ? ctl.signal : undefined,
+      cache: 'no-store'
+    }).then(function (r) {
+      return r.text().then(function (t) {
+        var j = null;
+        try { j = JSON.parse(t); } catch (e) {}
+        if (!j) throw new Error('El servidor no ha contestado bien (' + r.status + ').');
+        return j;
+      });
+    }).catch(function (e) {
+      if (e && e.name === 'AbortError') throw new Error('El servidor tarda demasiado. Revisa la conexión.');
+      if (e && /Failed to fetch|NetworkError|Load failed/i.test(String(e.message))) throw new Error('Sin conexión con el servidor.');
+      throw e;
+    }).then(function (j) {
+      if (tm) clearTimeout(tm);
+      if (j.ok === false && (j.codigo === 'clave' || j.codigo === 'sin_clave')) {
+        S.clave = null; lsSet('rd_clave', null);
+        pantallaAcceso((j.error || 'Clave no válida.') + ' Comprueba el enlace o pide uno nuevo.');
+        throw new Error('__acceso__');
+      }
+      return j;
+    }, function (e) { if (tm) clearTimeout(tm); throw e; });
+  }
+  function msgError(e) { return (e && e.message) ? e.message : 'Algo ha fallado.'; }
+
+  function aplicarEstado(j) {
+    if (!j || !j.dispositivos) return;
+    S.est = { dispositivos: j.dispositivos, personas: j.personas };
+    if (j.ahora) S.desfase = new Date(j.ahora).getTime() - Date.now();
+    S.ultima = Date.now(); S.error = null;
+  }
+
+  function cargarEstado(silencioso) {
+    if (S.cargando) return Promise.resolve();
+    S.cargando = true;
+    if (!silencioso) S.error = null;
+    pintarCabecera(true);
+    return llamar('estado').then(function (j) {
+      if (j.ok === false) throw new Error(j.error || 'No se pudo cargar.');
+      aplicarEstado(j);
+    }).catch(function (e) {
+      if (e.message === '__acceso__') return;
+      S.error = msgError(e);
+    }).then(function () {
+      S.cargando = false;
+      pintarTodo();
+    });
+  }
+
+  // ── Toasts y modales ──────────────────────────────────────────────────────
+  function toast(texto, tipo) {
+    var cont = $('toasts');
+    var t = h('div', { class: 'toast' + (tipo ? ' ' + tipo : '') }, [h('span', { text: texto })]);
+    cont.appendChild(t);
+    setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, tipo === 'mal' ? 6000 : 3500);
+  }
+
+  function abrirModal(o) {
+    cerrarModal();
+    var botones = (o.botones || []).map(function (b) {
+      var btn = h('button', { type: 'button', class: 'btn ' + (b.clase || ''), onclick: function () { if (!btn.disabled) b.accion(ctl); } },
+        [b.icono ? ic(b.icono) : null, b.texto]);
+      b.el = btn;
+      return btn;
+    });
+    var caja = h('div', { class: 'kmodal' + (o.largo ? ' kmodal-largo' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-label': o.titulo, tabindex: '-1' }, [
+      h('h3', { text: o.titulo }),
+      o.sub ? h('p', { class: 'sub-modal', text: o.sub }) : null,
+      o.cuerpo || null,
+      h('div', { class: 'error-modal oculto', id: 'modalError', role: 'alert' }),
+      botones.length ? h('div', { class: 'fila-botones' }, botones) : null
+    ]);
+    var fondo = h('div', { class: 'kback', onmousedown: function (ev) { if (ev.target === fondo && !ctl.ocupado) ctl.cerrar(); } }, [caja]);
+    var previo = document.activeElement;
+    var ctl = {
+      el: caja, botones: o.botones || [], ocupado: false,
+      error: function (m) { var e = $('modalError'); if (!e) return; e.textContent = m || ''; e.classList.toggle('oculto', !m); },
+      ocupar: function (si) {
+        ctl.ocupado = si;
+        (o.botones || []).forEach(function (b) { if (b.el) b.el.disabled = si || (b.deshabilitado ? b.deshabilitado() : false); });
+      },
+      cerrar: function () {
+        if (fondo.parentNode) fondo.parentNode.removeChild(fondo);
+        document.removeEventListener('keydown', tecla, true);
+        document.body.classList.remove('modal-abierto');
+        S.modal = null;
+        if (previo && previo.focus) { try { previo.focus(); } catch (e) {} }
+      }
+    };
+    function tecla(ev) { if (ev.key === 'Escape' && !ctl.ocupado) { ev.stopPropagation(); ctl.cerrar(); } }
+    document.addEventListener('keydown', tecla, true);
+    document.body.appendChild(fondo);
+    document.body.classList.add('modal-abierto');
+    S.modal = ctl;
+    var primero = caja.querySelector('input,textarea,select,button.btn-operario.activo,button.btn-operario');
+    setTimeout(function () { (o.enfoque ? o.enfoque() : primero || caja).focus(); }, 30);
+    return ctl;
+  }
+  function cerrarModal() { if (S.modal) S.modal.cerrar(); }
+
+  function confirmarModal(titulo, texto, textoOk, peligro) {
+    return new Promise(function (res) {
+      var hecho = false;
+      function fin(v) { if (hecho) return; hecho = true; m.cerrar(); res(v); }
+      var m = abrirModal({
+        titulo: titulo, cuerpo: h('p', { text: texto }),
+        botones: [
+          { texto: 'Cancelar', clase: 'borde', accion: function () { fin(false); } },
+          { texto: textoOk || 'Aceptar', clase: peligro ? 'peligro' : '', accion: function () { fin(true); } }
+        ]
+      });
+      var cerrarOriginal = m.cerrar;
+      m.cerrar = function () { cerrarOriginal(); if (!hecho) { hecho = true; res(false); } };
+    });
+  }
+
+  // ── Pantalla de acceso ────────────────────────────────────────────────────
+  function pantallaAcceso(mensaje) {
+    cerrarModal();
+    vaciar($('cabecera')); vaciar($('tabs')); $('tabs').classList.add('oculto');
+    var campo = h('input', { type: 'password', id: 'accClave', autocomplete: 'off', autocapitalize: 'off', spellcheck: 'false', placeholder: 'Pega aquí la clave' });
+    var err = h('div', { class: 'error-modal' + (mensaje ? '' : ' oculto'), role: 'alert', text: mensaje || '' });
+    function entrar() {
+      var v = campo.value.trim();
+      if (!v) { campo.focus(); return; }
+      S.clave = v; lsSet('rd_clave', v);
+      $('tabs').classList.remove('oculto');
+      pintarCabecera(); pintarTabs();
+      vaciar($('vista')).appendChild(h('div', { class: 'vacio', text: 'Comprobando la clave…' }));
+      cargarEstado(false);
+    }
+    campo.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') entrar(); });
+    vaciar($('vista')).appendChild(h('div', { class: 'acceso' }, [
+      h('div', { class: 'brand-badge' }, [ic('candado')]),
+      h('h1', { class: 'brand-nombre', text: 'Registro de dispositivos' }),
+      h('p', { text: 'Entra con el enlace que te han pasado: lleva la clave dentro. Si lo prefieres, pégala aquí.' }),
+      err,
+      h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'accClave', text: 'Clave' }), campo]),
+      h('button', { type: 'button', class: 'btn grande', onclick: entrar }, [ic('llave'), 'Entrar'])
+    ]));
+  }
+
+  // ── Cabecera y pestañas ───────────────────────────────────────────────────
+  function enUso() { return S.est ? S.est.dispositivos.filter(function (d) { return d.activo && d.tiene; }).length : 0; }
+
+  function pintarCabecera(trabajando) {
+    var cab = vaciar($('cabecera'));
+    var estado;
+    if (trabajando || S.cargando) estado = h('span', { class: 'estado-sync trabajando', text: 'Actualizando…' });
+    else if (S.error) estado = h('span', { class: 'estado-sync mal', text: 'Sin conexión' });
+    else if (S.ultima) estado = h('span', { class: 'estado-sync ok', text: 'Actualizado ' + hora(S.ultima) });
+    else estado = h('span', { class: 'estado-sync', text: '—' });
+    cab.appendChild(h('div', { class: 'brand-badge' }, [ic('caja')]));
+    cab.appendChild(h('div', { class: 'brand-titulo' }, [
+      h('h1', { class: 'brand-nombre', text: 'Dispositivos' }),
+      h('div', { class: 'brand-sub', text: 'Quién tiene qué y desde cuándo' })
+    ]));
+    cab.appendChild(h('div', { class: 'brand-acciones' }, [
+      estado,
+      h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Actualizar ahora', onclick: function () { cargarEstado(false); } }, [ic('refrescar')])
+    ]));
+  }
+
+  function pintarTabs() {
+    var nav = vaciar($('tabs'));
+    [['ahora', 'Ahora', 'caja'], ['historial', 'Historial', 'historial'], ['ajustes', 'Ajustes', 'ajustes']].forEach(function (t) {
+      var n = t[0] === 'ahora' ? enUso() : 0;
+      nav.appendChild(h('button', {
+        type: 'button', role: 'tab', 'aria-selected': S.tab === t[0] ? 'true' : 'false', class: S.tab === t[0] ? 'activa' : '',
+        onclick: function () { cambiarTab(t[0]); }
+      }, [ic(t[2]), t[1], n ? h('span', { class: 'badge-tab', text: String(n), 'aria-label': n + ' en uso' }) : null]));
+    });
+  }
+
+  function cambiarTab(t) {
+    S.tab = t;
+    S.montado = '';
+    pintarTabs();
+    pintarVista(true);
+    if (t === 'historial') cargarHistorial(true);
+    window.scrollTo(0, 0);
+  }
+
+  function pintarTodo() {
+    if (!S.clave) return;
+    pintarCabecera(); pintarTabs(); pintarVista(false);
+  }
+
+  function pintarVista(forzar) {
+    if (!S.clave) return;
+    var v = $('vista');
+    if (!S.est) {
+      vaciar(v);
+      S.montado = '';
+      if (S.error) {
+        v.appendChild(h('div', { class: 'tarjeta borde-mal' }, [
+          h('div', { class: 'nombre', text: 'No se ha podido cargar' }),
+          h('p', { class: 'meta', text: S.error }),
+          h('button', { type: 'button', class: 'btn', onclick: function () { cargarEstado(false); } }, [ic('refrescar'), 'Reintentar'])
+        ]));
+      } else {
+        v.appendChild(h('div', { class: 'vacio', text: 'Cargando…' }));
+      }
+      return;
+    }
+    if (S.tab === 'ahora') { if (forzar || S.montado !== 'ahora') montarAhora(); pintarAhora(); }
+    else if (S.tab === 'historial') { if (forzar || S.montado !== 'historial') montarHistorial(); pintarHistorial(); }
+    else { montarAjustes(); }
+  }
+
+  // ── Pestaña «Ahora» ───────────────────────────────────────────────────────
+  function montarAhora() {
+    S.montado = 'ahora';
+    var v = vaciar($('vista'));
+    var buscador = h('div', { class: 'buscador' }, [
+      ic('buscar'),
+      h('label', { class: 'solo-lectores', for: 'buscar', text: 'Buscar dispositivo, serie o persona' }),
+      h('input', { type: 'search', id: 'buscar', placeholder: 'Buscar dispositivo, serie o persona', autocomplete: 'off', value: S.q,
+        oninput: function (ev) { S.q = ev.target.value; pintarAhora(); } })
+    ]);
+    var conmutador = h('div', { class: 'segmentos', role: 'group', 'aria-label': 'Forma de ver' }, [['cuadros', 'Ver en cuadros'], ['lista', 'Ver en lista']].map(function (x) {
+      return h('button', { type: 'button', class: S.vista === x[0] ? 'activa' : '', 'aria-pressed': S.vista === x[0] ? 'true' : 'false', 'aria-label': x[1],
+        onclick: function () { S.vista = x[0]; lsSet('rd_vista', x[0]); montarAhora(); pintarAhora(); } }, [ic(x[0])]);
+    }));
+    v.appendChild(h('div', { class: 'resumen', id: 'resumen' }));
+    v.appendChild(h('div', { class: 'fila-buscar' }, [buscador, conmutador]));
+    v.appendChild(h('div', { class: 'chips-scroll', id: 'chipsGrupo', role: 'group', 'aria-label': 'Tipo' }));
+    v.appendChild(h('div', { id: 'lista' }));
+  }
+
+  function pintarAhora() {
+    if (S.tab !== 'ahora' || !S.est || S.montado !== 'ahora') return;
+    var todos = S.est.dispositivos.filter(function (d) { return d.activo; });
+    var libres = todos.filter(function (d) { return !d.tiene; }).length;
+    var usados = todos.length - libres;
+
+    var res = vaciar($('resumen'));
+    [['libre', 'Libres', libres, 'borde-ok'], ['uso', 'En uso', usados, 'borde-acento']].forEach(function (x) {
+      res.appendChild(h('div', {
+        class: 'tarjeta clic ' + x[3] + (S.estado === x[0] ? ' activa' : ''), role: 'button', tabindex: '0', 'aria-pressed': S.estado === x[0] ? 'true' : 'false',
+        onclick: function () { S.estado = S.estado === x[0] ? '' : x[0]; pintarAhora(); },
+        onkeydown: function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); S.estado = S.estado === x[0] ? '' : x[0]; pintarAhora(); } }
+      }, [h('div', { class: 'etiqueta', text: x[1] }), h('div', { class: 'valor-grande mono', text: String(x[2]) })]));
+    });
+    if (todos.length) {
+      res.appendChild(h('div', { class: 'barra', role: 'img', 'aria-label': libres + ' libres y ' + usados + ' en uso' }, [
+        h('span', { class: 'b-libre', style: 'width:' + (libres * 100 / todos.length) + '%' }),
+        h('span', { class: 'b-uso', style: 'width:' + (usados * 100 / todos.length) + '%' })
+      ]));
+    }
+
+    var chips = vaciar($('chipsGrupo'));
+    var presentes = GRUPOS_DISP.filter(function (g) { return todos.some(function (d) { return d.grupo === g; }); });
+    if (presentes.length > 1) {
+      chips.classList.remove('oculto');
+      chips.appendChild(h('button', { type: 'button', class: 'pick', 'aria-pressed': S.grupo === '' ? 'true' : 'false', onclick: function () { S.grupo = ''; pintarAhora(); } }, ['Todos ' + todos.length]));
+      presentes.forEach(function (g) {
+        var n = todos.filter(function (d) { return d.grupo === g; }).length;
+        chips.appendChild(h('button', { type: 'button', class: 'pick', 'aria-pressed': S.grupo === g ? 'true' : 'false', onclick: function () { S.grupo = S.grupo === g ? '' : g; pintarAhora(); } },
+          [ic(ICONO_GRUPO[g]), PLURAL_GRUPO[g] + ' ' + n]));
+      });
+    } else { chips.classList.add('oculto'); }
+
+    var q = norm(S.q);
+    var lista = todos.filter(function (d) {
+      if (S.grupo && d.grupo !== S.grupo) return false;
+      if (S.estado === 'libre' && d.tiene) return false;
+      if (S.estado === 'uso' && !d.tiene) return false;
+      if (q && norm(d.nombre + ' ' + (d.serie || '') + ' ' + (d.tiene || '') + ' ' + d.grupo).indexOf(q) === -1) return false;
+      return true;
+    }).sort(function (a, b) {
+      // en cuadros cada uno se queda siempre en su sitio (por tipo y nombre); en lista, lo que está en uso va arriba
+      if (S.vista === 'lista' && !!a.tiene !== !!b.tiene) return a.tiene ? -1 : 1;
+      if (a.grupo !== b.grupo) return GRUPOS_DISP.indexOf(a.grupo) - GRUPOS_DISP.indexOf(b.grupo);
+      return clave2(a.nombre, b.nombre);
+    });
+
+    var cont = vaciar($('lista'));
+    if (!todos.length) {
+      cont.appendChild(h('div', { class: 'vacio', text: 'Todavía no hay dispositivos. Añádelos en Ajustes.' }));
+      return;
+    }
+    if (!lista.length) { cont.appendChild(h('div', { class: 'vacio', text: 'No hay nada con esos filtros.' })); return; }
+    if (S.vista === 'lista') {
+      var rej = h('div', { class: 'rejilla' });
+      lista.forEach(function (d) { rej.appendChild(tarjetaDispositivo(d)); });
+      cont.appendChild(rej);
+      return;
+    }
+    GRUPOS_DISP.forEach(function (g) {
+      var delGrupo = lista.filter(function (d) { return d.grupo === g; });
+      if (!delGrupo.length) return;
+      var libresG = delGrupo.filter(function (d) { return !d.tiene; }).length, usoG = delGrupo.length - libresG;
+      cont.appendChild(h('h2', { class: 'titulo-grupo' }, [ic(ICONO_GRUPO[g]), PLURAL_GRUPO[g],
+        h('span', { class: 'chip ok', text: libresG + (libresG === 1 ? ' libre' : ' libres') }),
+        usoG ? h('span', { class: 'chip acento', text: usoG + ' en uso' }) : null]));
+      var tab = h('div', { class: 'tablero' });
+      delGrupo.forEach(function (d) { tab.appendChild(cuadroDispositivo(d)); });
+      cont.appendChild(tab);
+    });
+  }
+
+  // «#12 Retráctil Linde» → número grande «#12» y nombre pequeño; si no lleva número, el nombre va grande
+  function cuadroDispositivo(d) {
+    var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
+    var m = /^(#\s*\d+)\s+(.+)$/.exec(d.nombre);
+    var grande = m ? m[1].replace(/\s+/g, '') : d.nombre, chico = m ? m[2] : (d.serie || '');
+    var pie = !d.tiene
+      ? [h('span', { class: 'cuadro-estado' }, [ic('check'), 'LIBRE'])]
+      : [h('span', { class: 'cuadro-quien', text: d.tiene }),
+         h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + 'desde ' + cuando(desde)])];
+    return h('button', {
+      type: 'button', class: 'cuadro ' + (!d.tiene ? 'libre' : viejo ? 'viejo' : 'uso'),
+      'aria-label': d.nombre + ', ' + (d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre'),
+      onclick: function () { if (d.tiene) menuDispositivo(d); else accionCoger(d); }
+    }, [
+      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo])]),
+      h('div', { class: 'cuadro-medio' }, [h('div', { class: 'cuadro-num' + (m ? '' : ' largo'), text: grande }), chico ? h('div', { class: 'cuadro-nom', text: chico }) : null]),
+      h('div', { class: 'cuadro-pie' }, pie)
+    ]);
+  }
+
+  // al tocar un cuadro ocupado: dejarlo o cogerlo tú
+  function menuDispositivo(d) {
+    var desde = new Date(d.desde).getTime();
+    abrirModal({
+      titulo: d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : ''),
+      cuerpo: h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + ').' }),
+      botones: [
+        { texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Cogerlo yo', clase: 'borde', icono: 'mano', accion: function (m) { m.cerrar(); accionCoger(d); } },
+        { texto: 'Dejar', icono: 'devolver', accion: function (m) { m.cerrar(); accionDejar(d); } }
+      ]
+    });
+  }
+
+  function tarjetaDispositivo(d) {
+    var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
+    var clase = 'tarjeta ' + (!d.tiene ? 'borde-ok' : viejo ? 'borde-aviso' : 'borde-acento');
+    var meta = [h('span', { class: 'meta' }, [ic(ICONO_GRUPO[d.grupo]), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
+    var estado;
+    if (!d.tiene) {
+      estado = h('div', { class: 'estado-linea' }, [h('span', { class: 'chip ok' }, [ic('check'), 'Libre'])]);
+    } else {
+      estado = h('div', { class: 'estado-linea' }, [
+        h('span', { class: 'chip ' + (viejo ? 'aviso' : 'acento') }, [ic(viejo ? 'alerta' : 'reloj'), viejo ? 'Desde ' + diaRelativo(desde) : 'En uso']),
+        h('span', { text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) })
+      ]);
+    }
+    var botones = !d.tiene
+      ? [h('button', { type: 'button', class: 'btn', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Coger'])]
+      : [h('button', { type: 'button', class: 'btn', onclick: function () { accionDejar(d); } }, [ic('devolver'), 'Dejar']),
+         h('button', { type: 'button', class: 'btn borde', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Cogerlo yo'])];
+    return h('div', { class: clase }, [
+      h('div', { class: 'tarjeta-cabecera' }, [h('div', { class: 'nombre', text: d.nombre })]),
+      h('div', null, meta),
+      estado,
+      h('div', { class: 'fila-botones' }, botones)
+    ]);
+  }
+
+  // ── Elegir persona (coger / dejar) ────────────────────────────────────────
+  // o: {titulo, sub, aviso, avisoClase, pre, boton(persona), notaPlaceholder, enviar(persona, nota) -> Promise<respuesta>}
+  function elegirPersona(o) {
+    var personas = S.est.personas.filter(function (p) { return p.activo; });
+    var elegido = null;
+    var cuerpo = h('div');
+    if (o.aviso) cuerpo.appendChild(h('div', { class: 'aviso-modal ' + (o.avisoClase || ''), text: o.aviso }));
+    if (!personas.length) {
+      cuerpo.appendChild(h('div', { class: 'aviso-modal', text: 'No hay personas en la lista. Añádelas en Ajustes → Personas.' }));
+    }
+    var botonesPersona = [];
+    var filtro = null;
+    if (personas.length > 24) {
+      filtro = h('input', { type: 'search', placeholder: 'Buscar nombre', 'aria-label': 'Buscar nombre', oninput: function () { aplicarFiltro(); } });
+      cuerpo.appendChild(h('div', { class: 'grupo-campo' }, [filtro]));
+    }
+    var secciones = [];
+    GRUPOS_PERS.forEach(function (g) {
+      var delGrupo = personas.filter(function (p) { return p.grupo === g; });
+      if (!delGrupo.length) return;
+      var rej = h('div', { class: 'grid-operarios' });
+      delGrupo.forEach(function (p) {
+        var b = h('button', { type: 'button', class: 'btn-operario', 'aria-pressed': 'false', onclick: function () { elegir(p.nombre); } }, [p.nombre]);
+        b.dataset.nombre = norm(p.nombre);
+        botonesPersona.push({ p: p, b: b });
+        rej.appendChild(b);
+      });
+      var tit = h('h2', { text: g === 'Jefe' ? 'Jefes' : g === 'Operario' ? 'Operarios' : 'Otros' });
+      secciones.push({ tit: tit, rej: rej, botones: botonesPersona.filter(function (x) { return x.p.grupo === g; }) });
+      cuerpo.appendChild(tit); cuerpo.appendChild(rej);
+    });
+    var nota = h('input', { type: 'text', id: 'notaMov', maxlength: '200', placeholder: o.notaPlaceholder || 'Nota (opcional)', autocomplete: 'off' });
+    cuerpo.appendChild(h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'notaMov', text: 'Nota' }), nota]));
+
+    function aplicarFiltro() {
+      var q = norm(filtro ? filtro.value : '');
+      secciones.forEach(function (s) {
+        var visibles = 0;
+        s.botones.forEach(function (x) { var ok = !q || x.b.dataset.nombre.indexOf(q) !== -1; x.b.classList.toggle('oculto', !ok); if (ok) visibles++; });
+        s.tit.classList.toggle('oculto', !visibles); s.rej.classList.toggle('oculto', !visibles);
+      });
+    }
+    function elegir(nombre) {
+      elegido = nombre;
+      botonesPersona.forEach(function (x) { var on = x.p.nombre === nombre; x.b.classList.toggle('activo', on); x.b.setAttribute('aria-pressed', on ? 'true' : 'false'); });
+      principal.el.disabled = false;
+      principal.el.lastChild.textContent = o.boton(nombre);
+    }
+
+    var principal = {
+      texto: 'Elige quién eres', clase: '', icono: o.icono, deshabilitado: function () { return !elegido; },
+      accion: function (m) {
+        if (!elegido) return;
+        m.error('');
+        m.ocupar(true);
+        var texto = principal.el.lastChild.textContent;
+        principal.el.lastChild.textContent = 'Guardando…';
+        o.enviar(elegido, nota.value.trim()).then(function (r) {
+          if (r && r.ok === false) {
+            m.ocupar(false); principal.el.lastChild.textContent = texto;
+            if (r.codigo === 'ocupado') { aplicarEstado(r); pintarTodo(); }
+            m.error(r.error || 'No se ha podido guardar.');
+            return;
+          }
+          aplicarEstado(r);
+          S.yo = elegido; lsSet('rd_yo', elegido);
+          m.cerrar();
+          pintarTodo();
+          if (o.hecho) toast(o.hecho(elegido, r), 'ok');
+        }).catch(function (e) {
+          if (e.message === '__acceso__') return;
+          m.ocupar(false); principal.el.lastChild.textContent = texto;
+          m.error(msgError(e));
+        });
+      }
+    };
+    var m = abrirModal({
+      titulo: o.titulo, sub: o.sub, cuerpo: cuerpo, largo: true,
+      botones: [{ texto: 'Cancelar', clase: 'borde', accion: function (mm) { mm.cerrar(); } }, principal],
+      enfoque: function () { return botonesPersona.length ? (botonesPersona.filter(function (x) { return x.p.nombre === o.pre; })[0] || botonesPersona[0]).b : cuerpo; }
+    });
+    principal.el.disabled = true;
+    var pre = personas.filter(function (p) { return o.pre && norm(p.nombre) === norm(o.pre); })[0];
+    if (pre) elegir(pre.nombre);
+    else principal.el.lastChild.textContent = 'Elige quién eres';
+    return m;
+  }
+
+  function accionCoger(d) {
+    var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    elegirPersona({
+      titulo: 'Coger', sub: d.nombre, icono: 'mano', pre: S.yo,
+      aviso: d.tiene ? 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + '. Al cogerlo tú, se anota que ' + d.tiene + ' lo deja.' : null,
+      avisoClase: 'aviso',
+      boton: function (p) { return 'Coger como ' + p; },
+      notaPlaceholder: 'Nota (opcional): para qué, dónde estará…',
+      enviar: function (p, nota) { return llamar('coger', { dispositivo_id: d.id, persona: p, nota: nota, forzar: !!d.tiene }); },
+      hecho: function (p) { return p + ' ha cogido ' + d.nombre; }
+    });
+  }
+
+  function accionDejar(d) {
+    var desde = d.desde ? new Date(d.desde).getTime() : 0;
+    elegirPersona({
+      titulo: 'Dejar', sub: d.nombre, icono: 'devolver', pre: d.tiene,
+      aviso: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + '). Elige quién lo deja.',
+      avisoClase: 'info',
+      boton: function (p) { return norm(p) === norm(d.tiene) ? 'Dejar (' + p + ')' : 'Registrar el «dejar» como ' + p; },
+      notaPlaceholder: 'Nota (opcional): dónde lo dejas, avería…',
+      enviar: function (p, nota) { return llamar('dejar', { dispositivo_id: d.id, persona: p, nota: nota }); },
+      hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba libre' : d.nombre + ' queda libre'; }
+    });
+  }
+
+  // ── Pestaña «Historial» ───────────────────────────────────────────────────
+  function montarHistorial() {
+    S.montado = 'historial';
+    var f = S.hist.f;
+    var v = vaciar($('vista'));
+    function sel(id, etiqueta, opciones, valor, clave) {
+      var s = h('select', { id: id, onchange: function (ev) { f[clave] = ev.target.value; cargarHistorial(true); } },
+        opciones.map(function (o) { return h('option', { value: o[0], text: o[1] }); }));
+      s.value = valor;
+      return h('div', { class: 'grupo-campo', style: 'margin:0' }, [h('label', { class: 'campo', for: id, text: etiqueta }), s]);
+    }
+    var disp = S.est.dispositivos.slice().sort(function (a, b) { return clave2(a.nombre, b.nombre); });
+    var pers = S.est.personas.slice().sort(function (a, b) { return clave2(a.nombre, b.nombre); });
+    var fechaD = h('input', { type: 'date', id: 'hDesde', value: f.desde, onchange: function (ev) { f.desde = ev.target.value; cargarHistorial(true); } });
+    var fechaH = h('input', { type: 'date', id: 'hHasta', value: f.hasta, onchange: function (ev) { f.hasta = ev.target.value; cargarHistorial(true); } });
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'rejilla-filtros' }, [
+        sel('hDisp', 'Dispositivo', [['', 'Todos']].concat(disp.map(function (d) { return [d.id, d.nombre + (d.activo ? '' : ' (archivado)')]; })), f.dispositivo_id, 'dispositivo_id'),
+        sel('hPers', 'Persona', [['', 'Todas']].concat(pers.map(function (p) { return [p.nombre, p.nombre + (p.activo ? '' : ' (archivada)')]; })), f.persona, 'persona'),
+        sel('hAcc', 'Movimiento', [['', 'Todos'], ['coger', 'Cogidos'], ['dejar', 'Dejados']], f.accion, 'accion'),
+        h('div', { class: 'grupo-campo', style: 'margin:0' }, [h('label', { class: 'campo', for: 'hDesde', text: 'Desde' }), fechaD]),
+        h('div', { class: 'grupo-campo', style: 'margin:0' }, [h('label', { class: 'campo', for: 'hHasta', text: 'Hasta' }), fechaH])
+      ]),
+      h('div', { class: 'fila-botones', style: 'margin-top:12px' }, [
+        h('button', { type: 'button', class: 'btn mini borde', onclick: function () { S.hist.f = { dispositivo_id: '', persona: '', accion: '', desde: '', hasta: '' }; montarHistorial(); pintarHistorial(); cargarHistorial(true); } }, [ic('x'), 'Quitar filtros']),
+        h('button', { type: 'button', class: 'btn mini borde', onclick: descargarCSV }, [ic('descargar'), 'Descargar CSV'])
+      ])
+    ]));
+    v.appendChild(h('div', { id: 'histLista' }));
+  }
+
+  function filtrosArgs() {
+    var f = S.hist.f, a = {};
+    if (f.dispositivo_id) a.dispositivo_id = f.dispositivo_id;
+    if (f.persona) a.persona = f.persona;
+    if (f.accion) a.accion = f.accion;
+    if (f.desde) a.desde = f.desde;
+    if (f.hasta) a.hasta = f.hasta;
+    return a;
+  }
+
+  var hSeq = 0;
+  function cargarHistorial(desdeCero) {
+    var mi = ++hSeq;
+    var a = filtrosArgs();
+    a.limite = 50; a.desplazamiento = desdeCero ? 0 : S.hist.filas.length;
+    S.hist.cargando = true;
+    if (desdeCero) { S.hist.filas = []; S.hist.mas = false; S.hist.error = null; }
+    pintarHistorial();
+    return llamar('historial', a).then(function (j) {
+      if (mi !== hSeq) return;
+      if (j.ok === false) throw new Error(j.error || 'No se pudo cargar el historial.');
+      S.hist.filas = S.hist.filas.concat(j.filas || []);
+      S.hist.mas = !!j.mas;
+    }).catch(function (e) {
+      if (mi !== hSeq || e.message === '__acceso__') return;
+      S.hist.error = msgError(e);
+    }).then(function () {
+      if (mi !== hSeq) return;
+      S.hist.cargando = false;
+      pintarHistorial();
+    });
+  }
+
+  function pintarHistorial() {
+    if (S.tab !== 'historial' || S.montado !== 'historial') return;
+    var cont = $('histLista'); if (!cont) return;
+    vaciar(cont);
+    var H = S.hist;
+    if (H.error) {
+      cont.appendChild(h('div', { class: 'tarjeta borde-mal' }, [h('p', { class: 'meta', text: H.error }),
+        h('button', { type: 'button', class: 'btn mini', onclick: function () { cargarHistorial(!H.filas.length); } }, [ic('refrescar'), 'Reintentar'])]));
+      return;
+    }
+    if (!H.filas.length) {
+      cont.appendChild(h('div', { class: 'vacio', text: H.cargando ? 'Cargando…' : 'No hay movimientos con estos filtros.' }));
+      return;
+    }
+    var diaPrev = '';
+    H.filas.forEach(function (m) {
+      var ms = new Date(m.ts).getTime(), dia = diaISO(ms);
+      if (dia !== diaPrev) {
+        diaPrev = dia;
+        var r = diaRelativo(ms);
+        cont.appendChild(h('div', { class: 'dia', text: r === 'hoy' ? 'Hoy · ' + fmtDiaLargo.format(new Date(ms)) : r === 'ayer' ? 'Ayer · ' + fmtDiaLargo.format(new Date(ms)) : fmtDiaLargo.format(new Date(ms)) }));
+      }
+      cont.appendChild(filaMovimiento(m, ms));
+    });
+    if (H.mas) {
+      cont.appendChild(h('button', { type: 'button', class: 'btn borde ancho', disabled: H.cargando ? true : null, onclick: function () { cargarHistorial(false); } },
+        [H.cargando ? 'Cargando…' : 'Cargar más']));
+    }
+  }
+
+  function filaMovimiento(m, ms) {
+    var coger = m.accion === 'coger';
+    var icono = m.automatico ? 'cambio' : coger ? 'mano' : 'devolver';
+    var verbo = coger ? ' cogió ' : (m.automatico ? ' lo deja: ' : ' dejó ');
+    var linea = m.automatico
+      ? [h('b', { text: m.persona }), ' dejó ', h('b', { text: m.dispositivo })]
+      : [h('b', { text: m.persona }), verbo, h('b', { text: m.dispositivo })];
+    var extra = [];
+    if (!coger && m.desde) extra.push('Lo tuvo ' + duracion(ms - new Date(m.desde).getTime()) + ' (desde ' + cuando(new Date(m.desde).getTime()) + ')');
+    if (m.por) extra.push('Lo registró ' + m.por);
+    if (m.nota) extra.push('«' + m.nota + '»');
+    return h('div', { class: 'tarjeta mov' }, [
+      h('div', { class: 'mov-ico ' + (m.automatico ? 'auto' : coger ? '' : 'dejar') }, [ic(icono)]),
+      h('div', { class: 'mov-cuerpo' }, [
+        h('div', { class: 'mov-linea' }, linea),
+        extra.length ? h('div', { class: 'meta', text: extra.join(' · ') }) : null
+      ]),
+      h('div', { class: 'mov-hora', text: hora(ms) })
+    ]);
+  }
+
+  function celdaCSV(v) {
+    var s = String(v == null ? '' : v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;       // que Excel no lo tome por fórmula
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  function descargarCSV() {
+    var a = filtrosArgs(); a.limite = 5000;
+    toast('Preparando el CSV…');
+    llamar('exportar', a).then(function (j) {
+      if (j.ok === false) throw new Error(j.error || 'No se pudo exportar.');
+      var filas = [['Fecha', 'Hora', 'Movimiento', 'Dispositivo', 'Persona', 'Registrado por', 'Nota', 'Lo tenía desde', 'Minutos que lo tuvo']];
+      (j.filas || []).forEach(function (m) {
+        var ms = new Date(m.ts).getTime(), d = m.desde ? new Date(m.desde).getTime() : null;
+        filas.push([fmtDiaLargo.format(new Date(ms)), hora(ms), m.accion === 'coger' ? 'Coger' : (m.automatico ? 'Dejar (cambio de manos)' : 'Dejar'),
+          m.dispositivo, m.persona, m.por || '', m.nota || '', d ? fmtDiaLargo.format(new Date(d)) + ' ' + hora(d) : '', d ? Math.round((ms - d) / 60000) : '']);
+      });
+      var csv = '﻿' + filas.map(function (f) { return f.map(celdaCSV).join(';'); }).join('\r\n');
+      var url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+      var enlace = h('a', { href: url, download: 'historial-dispositivos-' + diaISO(Date.now()) + '.csv' });
+      document.body.appendChild(enlace); enlace.click(); document.body.removeChild(enlace);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+      toast((j.filas || []).length + ' movimientos descargados' + (j.mas ? ' (solo los 5.000 más recientes)' : ''), 'ok');
+    }).catch(function (e) { if (e.message !== '__acceso__') toast(msgError(e), 'mal'); });
+  }
+
+  // ── Pestaña «Ajustes» ─────────────────────────────────────────────────────
+  function montarAjustes() {
+    S.montado = 'ajustes';
+    var v = vaciar($('vista'));
+    var seg = h('div', { class: 'segmentos', role: 'tablist' }, [['disp', 'Dispositivos'], ['pers', 'Personas'], ['otros', 'Otros']].map(function (s) {
+      return h('button', { type: 'button', role: 'tab', class: S.aj === s[0] ? 'activa' : '', 'aria-selected': S.aj === s[0] ? 'true' : 'false',
+        onclick: function () { S.aj = s[0]; montarAjustes(); } }, [s[1]]);
+    }));
+    v.appendChild(seg);
+    if (S.aj === 'disp') ajustesLista(v, true);
+    else if (S.aj === 'pers') ajustesLista(v, false);
+    else ajustesOtros(v);
+  }
+
+  function ajustesLista(v, esDisp) {
+    var items = (esDisp ? S.est.dispositivos : S.est.personas).slice();
+    var activos = items.filter(function (x) { return x.activo; });
+    var archivados = items.filter(function (x) { return !x.activo; });
+    var grupos = esDisp ? GRUPOS_DISP : GRUPOS_PERS;
+    v.appendChild(h('div', { class: 'fila-titulo' }, [
+      h('div', null, [h('div', { class: 'nombre', text: esDisp ? 'Dispositivos y máquinas' : 'Personas' }),
+        h('div', { class: 'meta', text: activos.length + (esDisp ? ' en la lista' : ' en la lista (las que salen al coger y dejar)') })]),
+      h('div', { class: 'fila-botones' }, [
+        h('button', { type: 'button', class: 'btn mini', onclick: function () { editarItem(esDisp, null); } }, [ic('mas'), 'Añadir']),
+        h('button', { type: 'button', class: 'btn mini borde', onclick: function () { importarItems(esDisp); } }, [ic('clip'), 'Importar lista'])
+      ])
+    ]));
+    if (!activos.length) v.appendChild(h('div', { class: 'vacio', text: 'No hay nada todavía.' }));
+    grupos.forEach(function (g) {
+      var delGrupo = activos.filter(function (x) { return x.grupo === g; }).sort(function (a, b) { return clave2(a.nombre, b.nombre); });
+      if (!delGrupo.length) return;
+      v.appendChild(h('h2', { text: esDisp ? PLURAL_GRUPO[g] : (g === 'Jefe' ? 'Jefes' : g === 'Operario' ? 'Operarios' : 'Otros') }));
+      delGrupo.forEach(function (x) { v.appendChild(filaAjuste(x, esDisp)); });
+    });
+    if (archivados.length) {
+      v.appendChild(h('button', { type: 'button', class: 'btn mini borde', style: 'margin:14px 0 8px', 'aria-expanded': S.verArchivados ? 'true' : 'false',
+        onclick: function () { S.verArchivados = !S.verArchivados; montarAjustes(); } }, [(S.verArchivados ? 'Ocultar' : 'Ver') + ' archivados (' + archivados.length + ')']));
+      if (S.verArchivados) archivados.sort(function (a, b) { return clave2(a.nombre, b.nombre); }).forEach(function (x) { v.appendChild(filaAjuste(x, esDisp)); });
+    }
+  }
+
+  function filaAjuste(x, esDisp) {
+    var meta = esDisp ? x.grupo + (x.serie ? ' · ' + x.serie : '') + (x.tiene ? ' · lo tiene ' + x.tiene : '') : x.grupo;
+    var acciones = [h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Editar ' + x.nombre, onclick: function () { editarItem(esDisp, x); } }, [ic('lapiz')])];
+    if (x.activo) acciones.push(h('button', { type: 'button', class: 'btn mini peligro', 'aria-label': 'Archivar ' + x.nombre, onclick: function () { archivarItem(esDisp, x, false); } }, [ic('papelera')]));
+    else acciones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Recuperar ' + x.nombre, onclick: function () { archivarItem(esDisp, x, true); } }, [ic('recuperar'), 'Recuperar']));
+    return h('div', { class: 'tarjeta fila-aj', style: x.activo ? null : 'opacity:.7' }, [
+      h('div', { class: 'cuerpo' }, [h('div', { class: 'nombre', style: 'font-size:15px', text: x.nombre }), h('div', { class: 'meta', text: meta })]),
+      h('div', { class: 'acciones' }, acciones)
+    ]);
+  }
+
+  function campoTexto(id, etiqueta, valor, ph, max) {
+    var inp = h('input', { type: 'text', id: id, value: valor || '', placeholder: ph || '', maxlength: String(max || 80), autocomplete: 'off' });
+    return { el: h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: id, text: etiqueta }), inp]), input: inp };
+  }
+  function campoPicks(etiqueta, opciones, valor) {
+    var actual = valor;
+    var cont = h('div', { class: 'fila-picks' });
+    function pintar() {
+      vaciar(cont);
+      opciones.forEach(function (o) {
+        cont.appendChild(h('button', { type: 'button', class: 'pick', 'aria-pressed': actual === o ? 'true' : 'false', onclick: function () { actual = o; pintar(); } }, [o]));
+      });
+    }
+    pintar();
+    return { el: h('div', { class: 'grupo-campo' }, [h('div', { class: 'campo', style: 'display:block', text: etiqueta }), cont]), valor: function () { return actual; } };
+  }
+
+  function editarItem(esDisp, x) {
+    var nombre = campoTexto('fNombre', 'Nombre', x ? x.nombre : '', esDisp ? 'Ej.: Retráctil 12' : 'Ej.: Alex Rios', esDisp ? 80 : 60);
+    var serie = esDisp ? campoTexto('fSerie', 'Número de serie o código (opcional)', x ? x.serie : '', 'Ej.: R14 / P21120R02353') : null;
+    var grupo = campoPicks(esDisp ? 'Tipo' : 'Grupo', esDisp ? GRUPOS_DISP : GRUPOS_PERS, x ? x.grupo : (esDisp ? (S.grupo || 'Máquina') : 'Operario'));
+    var cuerpo = h('div', null, [nombre.el, grupo.el, serie ? serie.el : null]);
+    abrirModal({
+      titulo: (x ? 'Editar ' : 'Añadir ') + (esDisp ? 'dispositivo' : 'persona'), cuerpo: cuerpo, enfoque: function () { return nombre.input; },
+      botones: [
+        { texto: 'Cancelar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Guardar', icono: 'check', accion: function (m) {
+          var n = nombre.input.value.trim();
+          if (!n) { m.error('Falta el nombre.'); nombre.input.focus(); return; }
+          m.error(''); m.ocupar(true);
+          var args = { id: x ? x.id : undefined, nombre: n, grupo: grupo.valor() };
+          if (esDisp) args.serie = serie.input.value.trim();
+          llamar(esDisp ? 'guardar_dispositivo' : 'guardar_persona', args).then(function (r) {
+            m.ocupar(false);
+            if (r.ok === false) { m.error(r.error); return; }
+            aplicarEstado(r); m.cerrar(); pintarTodo(); toast('Guardado', 'ok');
+          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+        } }
+      ]
+    });
+  }
+
+  function archivarItem(esDisp, x, activo) {
+    var ir = function () {
+      llamar(esDisp ? 'archivar_dispositivo' : 'archivar_persona', { id: x.id, activo: activo }).then(function (r) {
+        if (r.ok === false) { toast(r.error, 'mal'); return; }
+        aplicarEstado(r); pintarTodo(); toast(activo ? 'Recuperado' : 'Archivado (el historial se conserva)', 'ok');
+      }).catch(function (e) { if (e.message !== '__acceso__') toast(msgError(e), 'mal'); });
+    };
+    if (activo) { ir(); return; }
+    confirmarModal('Archivar «' + x.nombre + '»', 'Deja de salir en las listas, pero su historial se conserva. Se puede recuperar cuando quieras.', 'Archivar', true).then(function (si) { if (si) ir(); });
+  }
+
+  function importarItems(esDisp) {
+    var ayuda = esDisp
+      ? 'Una línea por dispositivo: Nombre ; Tipo ; Serie. El tipo y la serie son opcionales (Tipo: Máquina, Móvil / lector, Ordenador, Impresora, Otro). Vale pegar columnas copiadas de una hoja de cálculo.'
+      : 'Una línea por persona: Nombre ; Grupo. El grupo es opcional (Jefe, Operario, Otro). Vale pegar columnas copiadas de una hoja de cálculo.';
+    var area = h('textarea', { id: 'impTexto', placeholder: esDisp ? 'Retráctil 12 ; Máquina ; R14 / P21120R02301\nWyse recepción ; Ordenador ; GTZWT93' : 'Alex Rios ; Operario\nDani Simo ; Jefe', spellcheck: 'false' });
+    var resumen = h('div', { class: 'meta', style: 'margin-bottom:8px', text: '0 líneas' });
+    function parsear() {
+      var out = [];
+      area.value.split(/\r?\n/).forEach(function (l) {
+        if (!l.trim()) return;
+        var c = (l.indexOf('\t') !== -1 ? l.split('\t') : l.split(';')).map(function (s) { return s.replace(/^\s*"?|"?\s*$/g, ''); });
+        if (!c[0] || norm(c[0]) === 'nombre') return;
+        out.push(esDisp ? { nombre: c[0], grupo: c[1] || '', serie: c[2] || '' } : { nombre: c[0], grupo: c[1] || '' });
+      });
+      return out;
+    }
+    area.addEventListener('input', function () { var n = parsear().length; resumen.textContent = n + (n === 1 ? ' línea' : ' líneas'); });
+    abrirModal({
+      titulo: 'Importar ' + (esDisp ? 'dispositivos' : 'personas'), sub: ayuda, largo: true,
+      cuerpo: h('div', null, [h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'impTexto', text: 'Lista' }), area]), resumen,
+        h('div', { class: 'meta', text: 'Los que ya existen (mismo nombre) no se tocan.' })]),
+      enfoque: function () { return area; },
+      botones: [
+        { texto: 'Cancelar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Importar', icono: 'check', accion: function (m) {
+          var lineas = parsear();
+          if (!lineas.length) { m.error('Pega al menos una línea.'); return; }
+          if (lineas.length > 500) { m.error('Máximo 500 líneas cada vez.'); return; }
+          m.error(''); m.ocupar(true);
+          llamar(esDisp ? 'importar_dispositivos' : 'importar_personas', { lineas: lineas }).then(function (r) {
+            m.ocupar(false);
+            if (r.ok === false) { m.error(r.error); return; }
+            aplicarEstado(r); m.cerrar(); pintarTodo();
+            toast(r.nuevos + ' nuevos' + (r.existentes ? ', ' + r.existentes + ' ya estaban' : ''), 'ok');
+          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+        } }
+      ]
+    });
+  }
+
+  function ajustesOtros(v) {
+    var modo = document.documentElement.getAttribute('data-kmode'), tema = document.documentElement.getAttribute('data-ktheme');
+    var picksModo = h('div', { class: 'fila-picks' }, [['dark', 'Oscuro'], ['light', 'Claro']].map(function (m) {
+      return h('button', { type: 'button', class: 'pick', 'aria-pressed': modo === m[0] ? 'true' : 'false', onclick: function () { setModo(m[0]); montarAjustes(); } }, [m[1]]);
+    }));
+    var nombresTema = { indigo: 'Índigo', lmgreen: 'Verde LM', taisared: 'Rojo Taisa', amber: 'Ámbar', retro80s: 'Fresh Prince' };
+    var picksTema = h('div', { class: 'fila-picks' }, Object.keys(TEMAS_MODOS).filter(function (t) { return TEMAS_MODOS[t].indexOf(modo) !== -1; }).map(function (t) {
+      return h('button', { type: 'button', class: 'pick', 'data-for': t, 'aria-pressed': tema === t ? 'true' : 'false', onclick: function () { setTema(t); montarAjustes(); } }, [h('span', { class: 'dot' }), nombresTema[t]]);
+    }));
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'nombre', text: 'Apariencia' }), h('p', { class: 'meta', text: 'Se guarda en este aparato.' }),
+      h('div', { class: 'grupo-campo' }, [h('div', { class: 'campo', text: 'Modo' }), picksModo]),
+      h('div', { class: 'grupo-campo', style: 'margin-bottom:0' }, [h('div', { class: 'campo', text: 'Acento' }), picksTema])
+    ]));
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'nombre', text: 'Acceso' }),
+      h('p', { class: 'meta', text: 'Quien tenga el enlace con la clave puede ver y apuntar. Si cambias la clave, hay que pasar el enlace nuevo a todos.' }),
+      h('div', { class: 'fila-botones' }, [
+        h('button', { type: 'button', class: 'btn borde', onclick: cambiarClave }, [ic('llave'), 'Cambiar la clave']),
+        h('button', { type: 'button', class: 'btn borde', onclick: function () {
+          confirmarModal('Salir en este aparato', 'Se olvida la clave en este móvil u ordenador. Para volver a entrar hará falta el enlace con la clave.', 'Salir', true).then(function (si) {
+            if (si) { S.clave = null; S.est = null; lsSet('rd_clave', null); lsSet('rd_yo', null); S.yo = ''; pantallaAcceso(''); }
+          });
+        } }, [ic('salir'), 'Salir de este aparato'])
+      ])
+    ]));
+    v.appendChild(h('div', { class: 'tarjeta' }, [
+      h('div', { class: 'nombre', text: 'Cómo funciona' }),
+      h('p', { class: 'meta', text: 'Coger y Dejar apuntan quién, qué y cuándo. Si algo lleva cogido desde un día anterior sale en ámbar: puede que se haya olvidado de dejarse. Los dispositivos y personas archivados no salen en las listas, pero su historial se conserva.' })
+    ]));
+  }
+
+  function cambiarClave() {
+    var n1 = h('input', { type: 'password', id: 'ck1', autocomplete: 'new-password', autocapitalize: 'off', spellcheck: 'false' });
+    var n2 = h('input', { type: 'password', id: 'ck2', autocomplete: 'new-password', autocapitalize: 'off', spellcheck: 'false' });
+    abrirModal({
+      titulo: 'Cambiar la clave', sub: 'Entre 8 y 64 caracteres. Al cambiarla, los enlaces anteriores dejan de valer.',
+      cuerpo: h('div', null, [
+        h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'ck1', text: 'Clave nueva' }), n1]),
+        h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'ck2', text: 'Repítela' }), n2])
+      ]),
+      enfoque: function () { return n1; },
+      botones: [
+        { texto: 'Cancelar', clase: 'borde', accion: function (m) { m.cerrar(); } },
+        { texto: 'Cambiar', icono: 'check', accion: function (m) {
+          if (n1.value.length < 8) { m.error('Mínimo 8 caracteres.'); return; }
+          if (n1.value !== n2.value) { m.error('No coinciden.'); return; }
+          m.error(''); m.ocupar(true);
+          llamar('cambiar_clave', { nueva: n1.value }).then(function (r) {
+            m.ocupar(false);
+            if (r.ok === false) { m.error(r.error); return; }
+            S.clave = n1.value; lsSet('rd_clave', n1.value);
+            m.cerrar(); toast('Clave cambiada. Pasa el enlace nuevo a los demás.', 'ok');
+          }).catch(function (e) { m.ocupar(false); if (e.message !== '__acceso__') m.error(msgError(e)); });
+        } }
+      ]
+    });
+  }
+
+  // ── Tema ──────────────────────────────────────────────────────────────────
+  function setModo(modo) {
+    var tema = document.documentElement.getAttribute('data-ktheme');
+    document.documentElement.setAttribute('data-kmode', modo); lsSet('taisa_mode_pick', modo);
+    if (TEMAS_MODOS[tema].indexOf(modo) === -1) setTema('taisared');
+  }
+  function setTema(t) { document.documentElement.setAttribute('data-ktheme', t); lsSet('taisa_theme_pick', t); }
+
+  // ── Arranque ──────────────────────────────────────────────────────────────
+  function arrancar() {
+    var k = null;
+    try { k = new URLSearchParams(location.search).get('k'); } catch (e) {}
+    if (k) {
+      lsSet('rd_clave', k);
+      try { history.replaceState(null, '', location.pathname + location.hash); } catch (e) {}   // que la clave no se quede en la barra
+    }
+    S.clave = k || lsGet('rd_clave');
+    if (!S.clave) { pantallaAcceso(''); return; }
+    pintarCabecera(); pintarTabs();
+    vaciar($('vista')).appendChild(h('div', { class: 'vacio', text: 'Cargando…' }));
+    cargarEstado(false);
+
+    S.temporizador = setInterval(function () {
+      if (document.visibilityState !== 'visible' || !S.clave || S.modal || S.cargando) return;
+      if (S.tab === 'ahora') cargarEstado(true);
+    }, REFRESCO_MS);
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState === 'visible' && S.clave && !S.modal && Date.now() - S.ultima > 20000) cargarEstado(true);
+    });
+  }
+
+  window.__registro = { estado: S };     // solo para las pruebas
+  arrancar();
+})();
+</script>
+</body>
+</html>
