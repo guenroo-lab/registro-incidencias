@@ -17,7 +17,8 @@ const CORS = {
 };
 
 const ACCIONES = new Set([
-  "comprobar", "comprobar_pin", "estado", "coger", "dejar", "avisar", "avisos", "resolver_aviso",
+  "comprobar", "comprobar_pin", "estado", "coger", "dejar", "pasar", "avisar", "avisos", "resolver_aviso",
+  "fuera_servicio", "estadisticas",
   "historial", "exportar", "guardar_dispositivo", "archivar_dispositivo", "importar_dispositivos",
   "guardar_persona", "archivar_persona", "importar_personas", "cambiar_clave", "cambiar_pin",
 ]);
