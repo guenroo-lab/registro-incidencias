@@ -17,7 +17,10 @@ function estadoInicial() {
       Object.assign({}, base, { id: U(1), nombre: '#1 Carretilla Linde', grupo: 'Máquina', serie: 'AAA' }),
       Object.assign({}, base, { id: U(2), nombre: '#2 Apilador Still', grupo: 'Máquina', serie: 'BBB', estado: 'fallo', estado_nota: 'frena un poco', estado_desde: new Date().toISOString(), estado_por: 'Beto Operario' }),
       Object.assign({}, base, { id: U(3), nombre: '#3 Transpaleta Linde', grupo: 'Máquina', serie: 'CCC', estado: 'averiado', estado_nota: 'no frena', fuera: true, fuera_motivo: 'no frena', fuera_desde: new Date().toISOString() }),
-      Object.assign({}, base, { id: U(4), nombre: '#4 Recepción', grupo: 'Móvil / lector', serie: 'ZY1' })
+      Object.assign({}, base, { id: U(4), nombre: '#4 Recepción', grupo: 'Móvil / lector', serie: 'ZY1' }),
+      Object.assign({}, base, { id: U(5), nombre: '#5 Retráctil Linde', grupo: 'Máquina', serie: 'DDD' }),
+      Object.assign({}, base, { id: U(6), nombre: '#6 TRANSPALETA eléctrica doble Still', grupo: 'Máquina', serie: 'EEE' }),
+      Object.assign({}, base, { id: U(7), nombre: '#7 Torito pequeño Linde', grupo: 'Máquina', serie: 'FFF' })
     ],
     personas: [{ id: 'p1', nombre: 'Ana Jefa', grupo: 'Jefe', activo: true }, { id: 'p2', nombre: 'Beto Operario', grupo: 'Operario', activo: true }],
     avisos: []
@@ -73,6 +76,14 @@ function estadoInicial() {
   assert(!/FALLO|AVERIADO/.test(await textoCuadro(1)), 'el operativo no lleva insignia');
   assert(/LIBRE/.test(await textoCuadro(2)), 'con fallo se sigue viendo libre (se puede coger)');
   assert(/frena un poco/.test(await textoCuadro(2)), 'la razón del fallo se ve en el propio cuadro: ' + await textoCuadro(2));
+
+  // 1b) Iconos fieles: retráctil, transpaleta eléctrica (sea cual sea la mayúscula) y, para el resto de máquinas, la carretilla de siempre
+  const icono = (n) => cuadro(n).locator('.cuadro-top svg').first().getAttribute('data-i');
+  assert.strictEqual(await icono(5), 'retractil', 'el retráctil lleva su icono');
+  assert.strictEqual(await icono(6), 'transpaleta', 'la transpaleta eléctrica lleva su icono');
+  assert.strictEqual(await icono(3), 'transpaleta', 'la «#3 Transpaleta Linde» también');
+  assert.strictEqual(await icono(7), 'maquina', 'un torito sigue con la carretilla elevadora');
+  assert.strictEqual(await icono(1), 'maquina', 'una carretilla sigue con la carretilla elevadora');
 
   // 2) Un toque normal sigue cogiendo (no abre el menú de estados)
   await cuadro(1).click();
@@ -130,6 +141,7 @@ function estadoInicial() {
 
   // 7) Un móvil admite «Baja» pero no «Con fallo»
   await page.locator('.seccion', { hasText: 'Dispositivos' }).click();
+  assert.strictEqual(await icono(4), 'movil', 'un móvil sigue con su icono');
   await largo(cuadro(4));
   await page.waitForSelector('.op-estado');
   const nm = (await page.locator('.op-estado b').allInnerTexts()).map((x) => x.replace(' · ahora', ''));

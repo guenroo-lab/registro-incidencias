@@ -430,6 +430,16 @@ ol.pasos li{margin:0 0 6px}
   var GRUPOS_PERS = ['Jefe', 'Operario', 'Otro'];
   var PLURAL_GRUPO = { 'Máquina': 'Máquinas', 'Móvil / lector': 'Móviles y lectores', 'Ordenador': 'Ordenadores', 'Impresora': 'Impresoras', 'Otro': 'Otros' };
   var ICONO_GRUPO = { 'Máquina': 'maquina', 'Móvil / lector': 'movil', 'Ordenador': 'pc', 'Impresora': 'impresora', 'Otro': 'caja' };
+  // El pictograma de cada cosa: por su grupo y, en las máquinas, por el tipo que lleva el nombre («#12 Retráctil Linde», «#3 Transpaleta eléctrica Linde»).
+  // Lo demás (torito, elevadora, carretilla…) lleva la carretilla elevadora de siempre.
+  function iconoDe(d) {
+    if (d && d.grupo === 'Máquina') {
+      var n = norm(d.nombre);
+      if (/retract/.test(n)) return 'retractil';
+      if (/transpal|traspal/.test(n)) return 'transpaleta';
+    }
+    return ICONO_GRUPO[d && d.grupo] || 'caja';
+  }
   var TEMAS_MODOS = { indigo: ['dark'], lmgreen: ['dark', 'light'], taisared: ['dark', 'light'], amber: ['dark'], retro80s: ['dark', 'light'] };
 
   // ── Iconos (Lucide, licencia ISC) ─────────────────────────────────────────
@@ -459,6 +469,8 @@ ol.pasos li{margin:0 0 6px}
     alerta: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/>',
     reloj: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
     maquina: '<path d="M12 12H5a2 2 0 0 0-2 2v5"/><circle cx="13" cy="19" r="2"/><circle cx="5" cy="19" r="2"/><path d="M8 19h3m5-17v17h6M6 12V7c0-1.1.9-2 2-2h3l5 5"/>',
+    retractil: '<path d="M17.5 2v16"/><path d="M17.5 14h5"/><path d="M2.5 18v-4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/><path d="M5 12V5.5h7V12"/><path d="M2.5 18h20"/><circle cx="6" cy="20.2" r="1.5"/><circle cx="20" cy="20.2" r="1.5"/>',
+    transpaleta: '<path d="M3.5 19v-7.5A2.5 2.5 0 0 1 6 9h3.5A2.5 2.5 0 0 1 12 11.5V16h9l1.5 3z"/><path d="M6.5 9 4.5 3"/><path d="M2.5 3h5"/><circle cx="7.5" cy="20.3" r="1.4"/><path d="M16 21h.01M21 21h.01"/>',
     movil: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
     pc: '<rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/>',
     impresora: '<path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"/><rect x="6" y="14" width="12" height="8" rx="1"/>'
@@ -471,7 +483,7 @@ ol.pasos li{margin:0 0 6px}
   };
   function ic(nombre) {
     var s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-    s.setAttribute('class', 'i'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none');
+    s.setAttribute('class', 'i'); s.setAttribute('data-i', nombre); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('fill', 'none');
     s.setAttribute('stroke', 'currentColor'); s.setAttribute('stroke-width', '2');
     s.setAttribute('stroke-linecap', 'round'); s.setAttribute('stroke-linejoin', 'round'); s.setAttribute('aria-hidden', 'true');
     s.innerHTML = ICONOS[nombre] || '';
@@ -1244,7 +1256,7 @@ ol.pasos li{margin:0 0 6px}
         + (fallo ? ', con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') : '') + (largo8 ? ', lleva más de ' + LIMITE_H + ' horas' : '') + (avs.length ? ', con aviso' : '') + (d.pendiente ? ', apunte sin enviar' : ''),
       onclick: function () { if (d.fuera) menuFuera(d); else if (d.tiene) menuDispositivo(d); else accionCoger(d); }
     }, [
-      h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo]), largo8 ? h('span', { class: 'cuadro-exceso' }, [ic('reloj'), '+' + LIMITE_H + ' h']) : null,
+      h('div', { class: 'cuadro-top' }, [ic(iconoDe(d)), largo8 ? h('span', { class: 'cuadro-exceso' }, [ic('reloj'), '+' + LIMITE_H + ' h']) : null,
         d.pendiente ? h('span', { class: 'cuadro-pend', title: 'Apunte sin enviar' }, [ic('sinred')]) : null,
         fallo ? h('span', { class: 'cuadro-fallo', title: 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') }, [ic('alerta'), 'FALLO']) : null,
         avs.length ? h('span', { class: 'cuadro-aviso', title: 'Con aviso' }, [ic('alerta')]) : null]),
@@ -1303,7 +1315,7 @@ ol.pasos li{margin:0 0 6px}
     var largo8 = !!d.tiene && !!desde && ahora() - desde >= LIMITE_MS;
     var fuera = !!d.fuera;
     var clase = 'tarjeta ' + (fuera ? 'borde-fuera' : !d.tiene ? 'borde-ok' : largo8 ? 'borde-mal' : viejo ? 'borde-aviso' : 'borde-acento');
-    var meta = [h('span', { class: 'meta' }, [ic(ICONO_GRUPO[d.grupo]), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
+    var meta = [h('span', { class: 'meta' }, [ic(iconoDe(d)), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
     var estado;
     if (d.estado === 'fallo' && !fuera) meta.push(h('span', { class: 'chip fallo' }, [ic('alerta'), 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '')]));
     if (fuera) {
@@ -1453,7 +1465,7 @@ ol.pasos li{margin:0 0 6px}
       notaPlaceholder: 'Nota (opcional): para qué, dónde estará…',
       enviar: function (p, nota) { return enviarMov('coger', { dispositivo_id: d.id, persona: p, nota: nota, forzar: !!d.tiene, tiene: d.tiene || undefined }, { resumen: 'Coger ' + d.nombre + ' (' + p + ')' }); },
       hecho: function (p) { return p + ' ha cogido ' + d.nombre; },
-      cartel: d.grupo === 'Máquina' ? { icono: 'maquina', titulo: 'Revisa el agua y el estado de la máquina', texto: d.nombre } : null
+      cartel: d.grupo === 'Máquina' ? { icono: iconoDe(d), titulo: 'Revisa el agua y el estado de la máquina', texto: d.nombre } : null
     });
   }
 
@@ -1497,7 +1509,7 @@ ol.pasos li{margin:0 0 6px}
       notaPlaceholder: 'Nota (opcional): dónde queda, para qué…',
       enviar: function (p, nota) { return enviarMov('pasar', { dispositivo_id: d.id, persona: d.tiene, para: p, de: d.tiene, nota: nota }, { resumen: 'Pasar ' + d.nombre + ' de ' + d.tiene + ' a ' + p }); },
       hecho: function (p, r) { return (r && r.ya) ? p + ' ya lo tenía' : d.nombre + ' pasa a ' + p; },
-      cartel: d.grupo === 'Máquina' ? { icono: 'maquina', titulo: 'Quien la recibe: revisa el agua y el estado', texto: d.nombre } : null
+      cartel: d.grupo === 'Máquina' ? { icono: iconoDe(d), titulo: 'Quien la recibe: revisa el agua y el estado', texto: d.nombre } : null
     });
   }
 
