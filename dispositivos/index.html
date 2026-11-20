@@ -215,6 +215,8 @@ input[type=date]{min-width:0;max-width:100%}
 .mov-ico{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none;background:var(--accent-dim);color:var(--accent-text)}
 .mov-ico.dejar{background:var(--ok-bg);color:var(--ok-fg)}
 .mov-ico.auto{background:var(--info-bg);color:var(--info-fg)}
+.mov-ico.estado.fallo{background:var(--warn-bg);color:var(--warn-fg)}
+.mov-ico.estado.mal{background:var(--danger-bg);color:var(--danger-fg)}
 .mov-cuerpo{min-width:0;flex:1}
 .mov-linea{font-size:14px;line-height:1.35;overflow-wrap:anywhere}
 .mov-hora{font-size:12.5px;color:var(--text-500);font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -582,7 +584,7 @@ ol.pasos li{margin:0 0 6px}
   function msgError(e) { return (e && e.message) ? e.message : 'Algo ha fallado.'; }
 
   // ── Sin conexión: lo que se apunta se guarda en el aparato y se envía solo al volver la cobertura ──
-  // Solo coger, dejar, pasar y avisar (lo de la zona de jefes necesita el PIN y no se aplaza). El servidor acepta la hora
+  // Solo coger, dejar, pasar y avisar (cambiar el estado y lo de la zona de jefes necesitan conexión y no se aplazan). El servidor acepta la hora
   // real del apunte («cuando») y es idempotente: reenviar lo mismo no duplica nada.
   var COLA_MAX = 50;
   function esSinRed(e) {
@@ -685,8 +687,9 @@ ol.pasos li{margin:0 0 6px}
   }
 
   // ── PIN de jefes (la comprobación de verdad está en el servidor) ───────────
+  // Cambiar el estado de un dispositivo o máquina NO lleva PIN: lo puede hacer cualquier persona de la lista.
   var GATED = ['comprobar_pin', 'historial', 'exportar', 'avisos', 'resolver_aviso', 'guardar_dispositivo', 'archivar_dispositivo',
-    'importar_dispositivos', 'guardar_persona', 'archivar_persona', 'importar_personas', 'cambiar_clave', 'cambiar_pin', 'fuera_servicio', 'cambiar_estado', 'estadisticas'];
+    'importar_dispositivos', 'guardar_persona', 'archivar_persona', 'importar_personas', 'cambiar_clave', 'cambiar_pin', 'estadisticas'];
   var PIN_REPOSO_MS = 10 * 60 * 1000;
   function silencio(e) { return !!e && (e.message === '__acceso__' || e.message === '__pin__'); }
   function conPin() { return !!(S.est && S.est.con_pin); }
@@ -1087,7 +1090,7 @@ ol.pasos li{margin:0 0 6px}
     v.appendChild(h('div', { class: 'fila-cierre', id: 'cierreFila' }));
     v.appendChild(h('div', { class: 'fila-buscar' }, [buscador, conmutador]));
     v.appendChild(h('div', { id: 'lista' }));
-    v.appendChild(h('p', { class: 'pista-largo', text: 'Jefes: mantén pulsado un cuadro para cambiar su estado (con fallo, averiado, en reparación o baja).' }));
+    v.appendChild(h('p', { class: 'pista-largo', text: 'Mantén pulsado un cuadro para cambiar su estado y anotar la razón (con fallo, averiado, en reparación o baja).' }));
     v.appendChild(h('div', { id: 'instalar' }));
   }
 
@@ -1229,13 +1232,14 @@ ol.pasos li{margin:0 0 6px}
       pie = [h('span', { class: 'cuadro-estado' }, [ic('ban'), etiquetaFuera(d)]),
              h('span', { class: 'cuadro-desde', text: d.tiene ? 'Lo tiene ' + d.tiene : (d.fuera_motivo || '') })];
     } else if (!d.tiene) {
-      pie = [h('span', { class: 'cuadro-estado' }, [ic('check'), 'LIBRE'])];
+      pie = [h('span', { class: 'cuadro-estado' }, [ic('check'), 'LIBRE']), fallo && d.estado_nota ? h('span', { class: 'cuadro-desde', text: d.estado_nota }) : null];
     } else {
       pie = [h('span', { class: 'cuadro-quien', text: d.tiene }),
              h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + (largo8 ? 'lleva ' + duracion(ahora() - desde) : 'desde ' + cuando(desde))])];
     }
     var btn = h('button', {
-      type: 'button', class: 'cuadro ' + (fuera ? 'fuera' : !d.tiene ? 'libre' : largo8 ? 'exceso' : viejo ? 'viejo' : 'uso') + (fallo ? ' fallo' : ''),
+      type: 'button', title: (fuera || fallo) && (d.fuera_motivo || d.estado_nota) ? mayuscula1(fuera ? textoEstadoFuera(d) : 'con fallo') + ': ' + (d.fuera_motivo || d.estado_nota) : null,
+      class: 'cuadro ' + (fuera ? 'fuera' : !d.tiene ? 'libre' : largo8 ? 'exceso' : viejo ? 'viejo' : 'uso') + (fallo ? ' fallo' : ''),
       'aria-label': d.nombre + ', ' + (fuera ? textoEstadoFuera(d) + (d.fuera_motivo ? ': ' + d.fuera_motivo : '') + (d.tiene ? ', lo tiene ' + d.tiene : '') : d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre')
         + (fallo ? ', con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') : '') + (largo8 ? ', lleva más de ' + LIMITE_H + ' horas' : '') + (avs.length ? ', con aviso' : '') + (d.pendiente ? ', apunte sin enviar' : ''),
       onclick: function () { if (d.fuera) menuFuera(d); else if (d.tiene) menuDispositivo(d); else accionCoger(d); }
@@ -1260,7 +1264,7 @@ ol.pasos li{margin:0 0 6px}
       { texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } },
       { texto: 'Avisar de un problema', clase: 'borde', icono: 'alerta', accion: function (m) { m.cerrar(); accionAvisar(d); } }
     ];
-    if (desbloqueado()) botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
+    botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
     botones.push(
       { texto: 'Cogerlo yo', clase: 'borde', icono: 'mano', accion: function (m) { m.cerrar(); accionCoger(d); } },
       { texto: 'Pasar a otra persona', clase: 'borde', icono: 'cambio', accion: function (m) { m.cerrar(); accionPasar(d); } },
@@ -1275,19 +1279,17 @@ ol.pasos li{margin:0 0 6px}
     });
   }
 
-  // al tocar un cuadro fuera de servicio: ver el motivo; los jefes pueden volver a ponerlo en servicio
+  // al tocar un cuadro fuera de servicio: ver el motivo y, cuando esté arreglado, volver a ponerlo en servicio
   function menuFuera(d) {
     var botones = [
       { texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } },
       { texto: 'Avisar de un problema', clase: 'borde', icono: 'alerta', accion: function (m) { m.cerrar(); accionAvisar(d); } }
     ];
-    if (d.tiene) botones.push({ texto: 'Dejar', clase: desbloqueado() ? 'borde' : '', icono: 'devolver', accion: function (m) { m.cerrar(); accionDejar(d); } });
-    if (desbloqueado()) {
-      botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
-      botones.push({ texto: 'Volver a ponerlo en servicio', icono: 'check', accion: function (m) { m.cerrar(); accionEnServicio(d); } });
-    }
-    var cuerpo = [h('div', { class: 'aviso-modal', text: mayuscula1(textoEstadoFuera(d)) + (d.fuera_desde ? ' desde ' + cuando(new Date(d.fuera_desde).getTime()) : '') + ': ' + (d.fuera_motivo || 'sin motivo')
-      + '. No se puede coger hasta que un jefe lo vuelva a poner operativo.' })];
+    if (d.tiene) botones.push({ texto: 'Dejar', clase: 'borde', icono: 'devolver', accion: function (m) { m.cerrar(); accionDejar(d); } });
+    botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
+    botones.push({ texto: 'Volver a ponerlo en servicio', icono: 'check', accion: function (m) { m.cerrar(); accionEnServicio(d); } });
+    var cuerpo = [h('div', { class: 'aviso-modal', text: mayuscula1(textoEstadoFuera(d)) + (d.fuera_desde ? ' desde ' + cuando(new Date(d.fuera_desde).getTime()) : '') + (d.estado_por ? ' (' + d.estado_por + ')' : '') + ': ' + (d.fuera_motivo || 'sin motivo')
+      + '. No se puede coger hasta que se vuelva a poner operativo.' })];
     if (d.pendiente_cs) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Pendiente de reflejar en Centinela: se actualiza solo en unos minutos.' }));
     if (d.tiene) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(new Date(d.desde).getTime()) + '.' }));
     avisosDe(d).slice(0, 3).forEach(function (a) { cuerpo.push(h('div', { class: 'aviso-modal', text: textoAviso(a) })); });
@@ -1319,7 +1321,7 @@ ol.pasos li{margin:0 0 6px}
     var botones = [];
     if (fuera) {
       if (d.tiene) botones.push(h('button', { type: 'button', class: 'btn', onclick: function () { accionDejar(d); } }, [ic('devolver'), 'Dejar']));
-      if (desbloqueado()) botones.push(h('button', { type: 'button', class: 'btn borde', onclick: function () { accionEnServicio(d); } }, [ic('check'), 'Poner en servicio']));
+      botones.push(h('button', { type: 'button', class: 'btn borde', onclick: function () { accionEnServicio(d); } }, [ic('check'), 'Poner en servicio']));
     } else if (!d.tiene) {
       botones.push(h('button', { type: 'button', class: 'btn', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Coger']));
     } else {
@@ -1328,9 +1330,7 @@ ol.pasos li{margin:0 0 6px}
                    h('button', { type: 'button', class: 'btn borde', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Cogerlo yo']));
     }
     botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Avisar de un problema de ' + d.nombre, onclick: function () { accionAvisar(d); } }, [ic('alerta'), 'Avisar']));
-    if (desbloqueado()) {
-      botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Cambiar el estado de ' + d.nombre, onclick: function () { menuEstado(d); } }, [ic('llave'), 'Estado']));
-    }
+    botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Cambiar el estado de ' + d.nombre, onclick: function () { menuEstado(d); } }, [ic('llave'), 'Estado']));
     return h('div', { class: clase }, [
       h('div', { class: 'tarjeta-cabecera' }, [h('div', { class: 'nombre', text: d.nombre }), d.pendiente ? h('span', { class: 'chip pend' }, [ic('sinred'), 'Sin enviar']) : null]),
       h('div', null, meta),
@@ -1373,10 +1373,11 @@ ol.pasos li{margin:0 0 6px}
       cuerpo.appendChild(tit); cuerpo.appendChild(rej);
     });
     var nota = h('input', { type: 'text', id: 'notaMov', maxlength: '200', placeholder: o.notaPlaceholder || 'Nota (opcional)', autocomplete: 'off' });
+    if (o.notaInicial) nota.value = o.notaInicial;
     cuerpo.appendChild(h('div', { class: 'grupo-campo' }, [h('label', { class: 'campo', for: 'notaMov', text: o.notaEtiqueta || 'Nota' }), nota]));
     if (o.disp) {
       var extra = [h('button', { type: 'button', class: 'btn mini borde', onclick: function () { m.cerrar(); accionAvisar(o.disp); } }, [ic('alerta'), 'Avisar de un problema'])];
-      if (desbloqueado() && !o.disp.fuera) extra.push(h('button', { type: 'button', class: 'btn mini borde', onclick: function () { m.cerrar(); accionFuera(o.disp); } }, [ic('ban'), 'Fuera de servicio']));
+      if (!o.disp.fuera) extra.push(h('button', { type: 'button', class: 'btn mini borde', onclick: function () { m.cerrar(); accionFuera(o.disp); } }, [ic('ban'), 'Fuera de servicio']));
       cuerpo.appendChild(h('div', { class: 'fila-botones', style: 'margin:0 0 8px;justify-content:flex-start' }, extra));
     }
 
@@ -1399,7 +1400,7 @@ ol.pasos li{margin:0 0 6px}
       texto: o.textoElegir || 'Elige quién eres', clase: '', icono: o.icono, deshabilitado: function () { return !elegido; },
       accion: function (m) {
         if (!elegido) return;
-        if (o.notaObligatoria && !nota.value.trim()) { m.error('Escribe qué le pasa.'); nota.focus(); return; }
+        if (o.notaObligatoria && nota.value.trim().length < (o.notaMin || 1)) { m.error(o.notaMensaje || 'Escribe qué le pasa.'); nota.focus(); return; }
         m.error('');
         m.ocupar(true);
         var texto = principal.el.lastChild.textContent;
@@ -1503,7 +1504,7 @@ ol.pasos li{margin:0 0 6px}
   function accionFuera(d) {
     elegirPersona({
       titulo: 'Poner fuera de servicio', sub: d.nombre, icono: 'ban', pre: S.yo,
-      aviso: 'Nadie podrá cogerlo ni pasárselo hasta que un jefe lo vuelva a poner en servicio.', avisoClase: 'info',
+      aviso: 'Nadie podrá cogerlo ni pasárselo hasta que se vuelva a poner en servicio.', avisoClase: 'info',
       boton: function (p) { return 'Fuera de servicio (lo marca ' + p + ')'; },
       notaEtiqueta: 'Motivo', notaPlaceholder: 'Ej.: frena mal, pantalla rota, esperando al SAT…', notaObligatoria: true,
       enviar: function (p, nota) { return llamar('fuera_servicio', { dispositivo_id: d.id, persona: p, fuera: true, motivo: nota }); },
@@ -1536,9 +1537,11 @@ ol.pasos li{margin:0 0 6px}
   function textoEstadoFuera(d) { return d.estado === 'averiado' ? 'averiado' : d.estado === 'reparacion' ? 'en reparación' : 'fuera de servicio'; }
   function etiquetaFuera(d) { return d.estado === 'averiado' ? 'AVERIADO' : d.estado === 'reparacion' ? 'EN REPARACIÓN' : 'FUERA DE SERVICIO'; }
 
-  // pulsación larga sobre un cuadro (o el botón «Estado»): elegir el nuevo estado. Pide el PIN de jefes.
+  // pulsación larga sobre un cuadro (o el botón «Estado»): elegir el nuevo estado. NO pide PIN: lo puede hacer cualquier persona de la lista.
+  function lineaRazon(d, actual) {
+    return ESTADOS[actual].nombre + (d.estado_desde ? ' desde ' + cuando(new Date(d.estado_desde).getTime()) : '') + (d.estado_por ? ' (' + d.estado_por + ')' : '') + ': ' + d.estado_nota;
+  }
   function menuEstado(d) {
-    if (!desbloqueado()) { S.pin = null; pedirPin(function () { menuEstado(d); }); return; }
     var actual = estadoDe(d);
     var lista = h('div', { class: 'lista-estados', role: 'group', 'aria-label': 'Estado de ' + d.nombre }, estadosDe(d).map(function (e) {
       var inf = ESTADOS[e];
@@ -1548,9 +1551,10 @@ ol.pasos li{margin:0 0 6px}
         [ic(inf.icono), h('div', null, [h('b', { text: inf.nombre + (e === actual ? ' · ahora' : '') }), h('span', { text: inf.texto })])]);
     }));
     var cuerpo = [];
-    if (actual !== 'operativo' && d.estado_nota) cuerpo.push(h('div', { class: 'aviso-modal', text: ESTADOS[actual].nombre + (d.estado_desde ? ' desde ' + cuando(new Date(d.estado_desde).getTime()) : '') + ': ' + d.estado_nota }));
+    if (actual !== 'operativo' && d.estado_nota) cuerpo.push(h('div', { class: 'aviso-modal', text: lineaRazon(d, actual) }));
     if (d.tiene) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(new Date(d.desde).getTime()) + '.' }));
     if (d.pendiente_cs) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Pendiente de reflejar en Centinela: se actualiza solo en unos minutos.' }));
+    cuerpo.push(h('p', { class: 'meta', style: 'margin:0 0 8px', text: 'Elige el estado y en el siguiente paso escribe la razón.' }));
     cuerpo.push(lista);
     abrirModal({
       titulo: 'Estado de ' + d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : '') + (d.enlazado ? ' · se refleja en Centinela' : ''),
@@ -1565,9 +1569,10 @@ ol.pasos li{margin:0 0 6px}
       titulo: e === 'operativo' ? 'Volver a ponerlo operativo' : 'Marcar «' + inf.nombre + '»', sub: d.nombre, icono: inf.icono, pre: S.yo,
       aviso: inf.texto + (d.tiene && e === 'baja' ? ' Lo tiene ' + d.tiene + ': se anotará que lo deja.' : '') + (d.enlazado ? ' Se refleja también en Centinela.' : ''), avisoClase: 'info',
       boton: function (p) { return inf.nombre + ' (lo marca ' + p + ')'; },
-      notaEtiqueta: e === 'operativo' ? 'Qué se ha hecho' : pideNota ? 'Qué le pasa' : 'Motivo',
-      notaPlaceholder: e === 'operativo' ? 'Opcional: cambiadas las pastillas, revisado por el SAT…' : pideNota ? 'Ej.: frena mal, pantalla rota, esperando al SAT…' : 'Opcional: obsoleto, perdido…',
-      notaObligatoria: pideNota,
+      notaEtiqueta: pideNota ? 'Razón del estado (obligatoria)' : e === 'operativo' ? 'Razón o qué se ha hecho (opcional)' : 'Razón (opcional)',
+      notaPlaceholder: e === 'operativo' ? 'Ej.: cambiadas las pastillas, revisado por el SAT…' : pideNota ? 'Ej.: frena mal, pantalla rota, esperando al SAT…' : 'Ej.: obsoleto, perdido…',
+      notaObligatoria: pideNota, notaMin: 5, notaMensaje: 'Escribe la razón del estado (mínimo 5 letras).',
+      notaInicial: pideNota && estadoDe(d) === e ? d.estado_nota : '',
       enviar: function (p, nota) { return llamar('cambiar_estado', { dispositivo_id: d.id, persona: p, estado: e, nota: nota }); },
       hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba así' : d.nombre + ': ' + inf.nombre.toLowerCase() + (d.enlazado ? ' · Centinela se actualiza solo' : ''); }
     });
@@ -1873,7 +1878,7 @@ ol.pasos li{margin:0 0 6px}
       h('div', { class: 'rejilla-filtros' }, [
         sel('hDisp', 'Dispositivo', [['', 'Todos']].concat(disp.map(function (d) { return [d.id, d.nombre + (d.activo ? '' : ' (archivado)')]; })), f.dispositivo_id, 'dispositivo_id'),
         sel('hPers', 'Persona', [['', 'Todas']].concat(pers.map(function (p) { return [p.nombre, p.nombre + (p.activo ? '' : ' (archivada)')]; })), f.persona, 'persona'),
-        sel('hAcc', 'Movimiento', [['', 'Todos'], ['coger', 'Cogidos'], ['dejar', 'Dejados']], f.accion, 'accion'),
+        sel('hAcc', 'Movimiento', [['', 'Todos'], ['coger', 'Cogidos'], ['dejar', 'Dejados'], ['estado', 'Cambios de estado']], f.accion, 'accion'),
         h('div', { class: 'grupo-campo', style: 'margin:0' }, [h('label', { class: 'campo', for: 'hDesde', text: 'Desde' }), fechaD]),
         h('div', { class: 'grupo-campo', style: 'margin:0' }, [h('label', { class: 'campo', for: 'hHasta', text: 'Hasta' }), fechaH])
       ]),
@@ -1948,7 +1953,29 @@ ol.pasos li{margin:0 0 6px}
     }
   }
 
+  function filaCambioEstado(m, ms) {
+    var inf = ESTADOS[m.estado] || { nombre: m.estado || 'estado', icono: 'llave' };
+    var ant = ESTADOS[m.estado_anterior];
+    var igual = !!m.estado_anterior && m.estado_anterior === m.estado;
+    var linea = igual
+      ? [h('b', { text: m.persona }), ' actualizó la razón de ', h('b', { text: m.dispositivo }), ' (' + inf.nombre.toLowerCase() + ')']
+      : [h('b', { text: m.persona }), ' marcó ', h('b', { text: m.dispositivo }), ' como ', h('b', { text: inf.nombre.toLowerCase() })];
+    var extra = [];
+    if (!igual && ant) extra.push('Antes: ' + ant.nombre.toLowerCase());
+    if (m.fuente === 'centinela') extra.push('Desde Centinela');
+    if (m.nota) extra.push('Razón: «' + m.nota + '»');
+    return h('div', { class: 'tarjeta mov' }, [
+      h('div', { class: 'mov-ico estado ' + (m.estado === 'operativo' ? 'dejar' : m.estado === 'fallo' ? 'fallo' : 'mal') }, [ic(inf.icono)]),
+      h('div', { class: 'mov-cuerpo' }, [
+        h('div', { class: 'mov-linea' }, linea),
+        extra.length ? h('div', { class: 'meta', text: extra.join(' · ') }) : null
+      ]),
+      h('div', { class: 'mov-hora', text: hora(ms) })
+    ]);
+  }
+
   function filaMovimiento(m, ms) {
+    if (m.accion === 'estado') return filaCambioEstado(m, ms);
     var coger = m.accion === 'coger';
     var icono = m.automatico ? 'cambio' : coger ? 'mano' : 'devolver';
     var verbo = coger ? ' cogió ' : (m.automatico ? ' lo deja: ' : ' dejó ');
@@ -1980,8 +2007,14 @@ ol.pasos li{margin:0 0 6px}
     llamar('exportar', a).then(function (j) {
       if (j.ok === false) throw new Error(j.error || 'No se pudo exportar.');
       var filas = [['Fecha', 'Hora', 'Movimiento', 'Dispositivo', 'Persona', 'Registrado por', 'Nota', 'Lo tenía desde', 'Minutos que lo tuvo']];
+      var nombreEstado = function (e) { return (ESTADOS[e] && ESTADOS[e].nombre) || e || ''; };
       (j.filas || []).forEach(function (m) {
         var ms = new Date(m.ts).getTime(), d = m.desde ? new Date(m.desde).getTime() : null;
+        if (m.accion === 'estado') {
+          filas.push([fmtDiaLargo.format(new Date(ms)), hora(ms), 'Estado: ' + nombreEstado(m.estado) + (m.estado_anterior ? ' (antes: ' + nombreEstado(m.estado_anterior) + ')' : '') + (m.fuente === 'centinela' ? ' [Centinela]' : ''),
+            m.dispositivo, m.persona, '', m.nota || '', '', '']);
+          return;
+        }
         filas.push([fmtDiaLargo.format(new Date(ms)), hora(ms), m.accion === 'coger' ? 'Coger' : (m.automatico ? 'Dejar (cambio de manos)' : 'Dejar'),
           m.dispositivo, m.persona, m.por || '', m.nota || '', d ? fmtDiaLargo.format(new Date(d)) + ' ' + hora(d) : '', d ? Math.round((ms - d) / 60000) : '']);
       });
@@ -1990,7 +2023,7 @@ ol.pasos li{margin:0 0 6px}
       var enlace = h('a', { href: url, download: 'historial-dispositivos-' + diaISO(Date.now()) + '.csv' });
       document.body.appendChild(enlace); enlace.click(); document.body.removeChild(enlace);
       setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
-      toast((j.filas || []).length + ' movimientos descargados' + (j.mas ? ' (solo los 5.000 más recientes)' : ''), 'ok');
+      toast((j.filas || []).length + ' movimientos y cambios de estado descargados' + (j.mas ? ' (solo los 5.000 más recientes)' : ''), 'ok');
     }).catch(function (e) { if (!silencio(e)) toast(msgError(e), 'mal'); });
   }
 

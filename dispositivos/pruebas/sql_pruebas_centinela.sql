@@ -21,10 +21,13 @@ do $$ begin
 end $$;
 \i dispositivos/sql/008_sincronizacion_centinela.sql
 \i dispositivos/sql/008_sincronizacion_centinela.sql
+-- 009: sin PIN para cambiar el estado, razón siempre guardada, cambios de estado en el historial (aquí se prueba el conjunto 008 + 009)
+\i dispositivos/sql/009_estado_sin_pin_con_razon.sql
+\i dispositivos/sql/009_estado_sin_pin_con_razon.sql
 
 do $t$
 declare r jsonb; c text := 'clave-de-prueba-123'; d1 uuid; d2 uuid; d3 uuid; d4 uuid; d5 uuid; n int; x registro.dispositivos%rowtype;
-        pend jsonb; id1 bigint; id2 bigint;
+        pend jsonb; id1 bigint; id2 bigint; dx uuid;
 begin
   select id into d1 from registro.dispositivos where nombre = '#1 Carretilla';
   select id into d2 from registro.dispositivos where nombre = '#2 Apilador';
@@ -46,7 +49,7 @@ begin
   r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d1, 'persona', 'Nadie', 'estado', 'averiado', 'nota', 'frena mal'));
   assert (r->>'ok')::boolean is false and r->>'error' like 'Elige quién eres%', 'persona de la lista';
   r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d1, 'persona', 'Ana', 'estado', 'averiado', 'nota', 'ya'));
-  assert (r->>'ok')::boolean is false and r->>'error' like 'Escribe qué le pasa%', 'nota obligatoria (5)';
+  assert (r->>'ok')::boolean is false and r->>'error' like 'Escribe la razón%', 'razón obligatoria (5)';
   r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d1, 'persona', 'Ana', 'estado', 'baja', 'nota', 'obsoleta'));
   assert (r->>'ok')::boolean is false and r->>'error' like 'Ese estado no vale%', 'una máquina no se da de baja';
   r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d3, 'persona', 'Ana', 'estado', 'fallo', 'nota', 'pantalla rayada'));
@@ -215,21 +218,77 @@ begin
         jsonb_build_object('origen', 'maquinaria', 'origen_id', '20', 'nombre', '#3 Nueva', 'serie', 'DDD444', 'estado', 'operativo'))));
   assert exists (select 1 from registro.dispositivos where nombre = '#3 Nueva (2)'), 'nombre repetido';
 
-  -- ── PIN: cambiar_estado y sync_centinela lo piden cuando hay PIN ──
+  -- ── PIN (009): cambiar_estado y fuera_servicio ya NO lo piden; sync_centinela y la zona de jefes SÍ ──
   update registro.config set pin_hash = extensions.crypt('1234', extensions.gen_salt('bf', 10)) where id = 1;
-  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d1, 'persona', 'Ana', 'estado', 'averiado', 'nota', 'sin pin'));
-  assert r->>'codigo' = 'pin', 'cambiar_estado pide PIN';
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', d1, 'persona', 'Beto', 'estado', 'averiado', 'nota', 'sin pin y operario'));
+  assert (r->>'ok')::boolean, 'cambiar_estado NO pide PIN y lo puede hacer un operario: ' || r::text;
+  assert (select estado || '|' || estado_nota || '|' || estado_por from registro.dispositivos where id = d1) = 'averiado|sin pin y operario|Beto', 'razón y autor guardados';
+  assert (select (e->>'estado_por') from jsonb_array_elements(r->'dispositivos') e where (e->>'id')::uuid = d1) = 'Beto', 'estado trae estado_por';
+  r := public.rd_accion(c, 'fuera_servicio', jsonb_build_object('dispositivo_id', d1, 'persona', 'Beto', 'fuera', false, 'motivo', 'cambiadas las pastillas'));
+  assert (r->>'ok')::boolean, 'fuera_servicio NO pide PIN: ' || r::text;
   r := public.rd_accion(c, 'sync_centinela', jsonb_build_object('items', '[]'::jsonb));
   assert r->>'codigo' = 'pin', 'sync_centinela pide PIN';
   r := public.rd_accion(c, 'sync_centinela', jsonb_build_object('pin', '1234', 'items', '[]'::jsonb));
   assert (r->>'ok')::boolean, 'con PIN pasa';
-  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('pin', '1234', 'dispositivo_id', d1, 'persona', 'Ana', 'estado', 'averiado', 'nota', 'con pin'));
-  assert (r->>'ok')::boolean, 'cambiar_estado con PIN';
+  r := public.rd_accion(c, 'historial', '{}'::jsonb);
+  assert r->>'codigo' = 'pin', 'el historial sigue pidiendo PIN';
+  r := public.rd_accion(c, 'estadisticas', '{}'::jsonb);
+  assert r->>'codigo' = 'pin', 'las estadísticas siguen pidiendo PIN';
+  r := public.rd_accion(c, 'avisos', '{}'::jsonb);
+  assert r->>'codigo' = 'pin', 'los avisos de jefes siguen pidiendo PIN';
+
+  select id into dx from registro.dispositivos where origen = 'maquinaria' and origen_id = '3';
+  -- ── razón siempre guardada (009) ──
+  select count(*) into n from registro.cambios_estado where dispositivo_id = dx;
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'reparacion', 'nota', 'lo mira el SAT'));
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Beto', 'estado', 'operativo', 'nota', 'cambiado el cargador'));
+  select * into x from registro.dispositivos where id = dx;
+  assert x.estado = 'operativo' and x.estado_nota is null and x.estado_por = 'Beto', 'vuelve a operativo sin razón vigente';
+  assert (select nota from registro.cambios_estado where dispositivo_id = dx order by id desc limit 1) = 'cambiado el cargador', 'la razón de volver a operativo queda en el registro de cambios';
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'operativo', 'nota', 'otra vez'));
+  assert (r->>'ya')::boolean, 'operativo sobre operativo = ya (aunque lleve razón)';
+  assert (select count(*) from registro.cambios_estado where dispositivo_id = dx) = n + 2, 'y no añade fila';
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'fallo', 'nota', 'se oye un ruido'));
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'fallo', 'nota', 'ahora además vibra'));
+  assert not coalesce((r->>'ya')::boolean, false) and (select estado_nota from registro.dispositivos where id = dx) = 'ahora además vibra', 'misma situación con otra razón = cambio de razón';
+  r := public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'operativo'));
+
+  -- a Centinela solo le llega la razón si el estado NO es operativo (como hasta ahora)
+  update registro.cambios_estado set aplicado = true where not aplicado;
+  r := public.rd_accion(c, 'sync_centinela', jsonb_build_object('pin', '1234', 'items', jsonb_build_array(
+        jsonb_build_object('origen', 'maquinaria', 'origen_id', '3', 'serie', 'CCC333', 'estado', 'operativo'))));
+  perform public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'averiado', 'nota', 'sin frenos del todo'));
+  perform public.rd_accion(c, 'cambiar_estado', jsonb_build_object('dispositivo_id', dx, 'persona', 'Ana', 'estado', 'operativo', 'nota', 'frenos nuevos'));
+  r := public.rd_accion(c, 'sync_centinela', jsonb_build_object('pin', '1234', 'items', '[]'::jsonb));
+  assert jsonb_array_length(r->'pendientes') = 2, 'dos pendientes para Centinela: ' || (r->'pendientes')::text;
+  assert r->'pendientes'->0->>'estado' = 'averiado' and r->'pendientes'->0->>'nota' = 'sin frenos del todo', 'averiado lleva la razón';
+  assert r->'pendientes'->1->>'estado' = 'operativo' and (r->'pendientes'->1->'nota') = 'null'::jsonb, 'operativo no manda razón a Centinela';
+  update registro.cambios_estado set aplicado = true where not aplicado;
+
+  -- ── historial con los cambios de estado (009) ──
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'accion', 'estado', 'dispositivo_id', dx));
+  assert (r->>'ok')::boolean and jsonb_array_length(r->'filas') >= 4, 'historial de estados: ' || r::text;
+  assert r->'filas'->0->>'accion' = 'estado' and r->'filas'->0->>'estado' = 'operativo' and r->'filas'->0->>'estado_anterior' = 'averiado'
+         and r->'filas'->0->>'nota' = 'frenos nuevos' and r->'filas'->0->>'persona' = 'Ana' and r->'filas'->0->>'dispositivo' = '#3 Nueva', 'la fila trae estado, anterior, razón y quién: ' || (r->'filas'->0)::text;
+  assert not exists (select 1 from jsonb_array_elements(r->'filas') f where f->>'accion' <> 'estado'), 'con el filtro «estado» solo salen cambios de estado';
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'accion', 'coger'));
+  assert not exists (select 1 from jsonb_array_elements(r->'filas') f where f->>'accion' <> 'coger'), 'con «coger» no salen estados';
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'limite', 500));
+  assert exists (select 1 from jsonb_array_elements(r->'filas') f where f->>'accion' = 'estado' and f->>'persona' = 'Centinela')
+     and exists (select 1 from jsonb_array_elements(r->'filas') f where f->>'accion' = 'coger'), 'sin filtro: mezcla movimientos y estados (los de Centinela salen como Centinela)';
+  assert (select count(*) from jsonb_array_elements(r->'filas') f where f->>'accion' = 'estado')
+       = (select count(*) from registro.cambios_estado), 'todos los cambios de estado salen';
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'persona', 'Beto', 'accion', 'estado'));
+  assert jsonb_array_length(r->'filas') >= 2 and not exists (select 1 from jsonb_array_elements(r->'filas') f where f->>'persona' <> 'Beto'), 'filtro por persona vale también para estados';
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'accion', 'nada'));
+  assert (r->>'ok')::boolean is false, 'filtro de acción desconocido';
+  r := public.rd_accion(c, 'historial', jsonb_build_object('pin', '1234', 'limite', 3, 'desplazamiento', 0));
+  assert jsonb_array_length(r->'filas') = 3 and (r->>'mas')::boolean, 'paginación: hay más';
 
   -- ── permisos: nada público ──
   assert not has_function_privilege('anon', 'public.rd_accion(text,text,jsonb)', 'execute'), 'anon no ejecuta rd_accion';
   assert not has_table_privilege('anon', 'registro.cambios_estado', 'select'), 'anon no lee la cola';
   assert has_function_privilege('service_role', 'public.rd_accion(text,text,jsonb)', 'execute'), 'service_role sí';
 
-  raise notice 'TODO OK (008)';
+  raise notice 'TODO OK (008 + 009)';
 end $t$;
