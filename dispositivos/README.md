@@ -36,6 +36,11 @@ navegador ──POST {clave, accion, args}──▶ función de borde «disposit
   baja), la acción `cambiar_estado` (pulsación larga) y la sincronización con Centinela (`sync_centinela`, cola `cambios_estado`). Hay que
   **volver a desplegar** `supabase/dispositivos.ts` (lleva las dos acciones nuevas). `sql/008_deshacer.sql` la quita (antes hay que volver a
   ejecutar 007).
+- `sql/009_estado_sin_pin_con_razon.sql` (requiere 001, 003, 007 y 008; re-ejecutable, no toca tablas): `cambiar_estado` y `fuera_servicio` **ya no
+  piden el PIN** (los puede hacer cualquier persona de la lista, jefe u operario); la **razón** del estado se guarda siempre (también al volver a
+  operativo), el **Historial** enseña los cambios de estado (acción `estado`, con razón, quién y estado anterior; los de Centinela salen como
+  «Centinela») y `estado()` trae `estado_por`. `sync_centinela` y la zona de jefes siguen pidiendo PIN. A Centinela solo se le manda la razón si el
+  estado no es operativo. `sql/009_deshacer.sql` + volver a ejecutar 008 lo deshace.
 - `sql/002_deshacer.sql`: lo quita todo (**borra** también el historial).
 - `pruebas/sql_pruebas.sql`, `pruebas/sql_pruebas_pin_avisos.sql`, `pruebas/sql_pruebas_mejoras.sql` y `pruebas/sql_pruebas_centinela.sql`:
   pruebas de la base de datos para un Postgres local vacío (ver la cabecera de cada archivo). `pruebas/ui_estados.js` prueba la web en
@@ -69,11 +74,12 @@ Los datos iniciales (personas y dispositivos) y la clave **no están en este rep
   en el cuadro, en un banner de «Ahora» y al coger ese dispositivo. Los jefes los ven en Avisos y los marcan como resueltos.
 - **Mensajes:** al coger una máquina sale «Revisa el agua y el estado antes de coger la máquina»; al dejar un móvil o lector,
   «Asegúrate de dejar bien conectado el dispositivo en carga».
-- **Estados (008):** **pulsación larga** (0,6 s) sobre un cuadro, o «Cambiar estado» en su menú, abre las opciones de estado (pide el PIN de
-  jefes y quién eres). Máquinas: operativo · **con fallo** (se puede coger; al coger sale la nota del fallo) · **averiado** y **en reparación**
+- **Estados (008):** **pulsación larga** (0,6 s) sobre un cuadro, o «Cambiar estado» en su menú, abre las opciones de estado (**sin PIN**: cualquiera
+  puede; después se elige quién eres y se escribe la razón). Máquinas: operativo · **con fallo** (se puede coger; al coger sale la nota del fallo) · **averiado** y **en reparación**
   (NO se puede coger: sale un mensaje; cuadro rayado). Dispositivos: operativo · averiado · en reparación · **baja** (desaparece de las
-  listas; si alguien lo tenía se anota que lo deja; el historial se conserva; volver a operativo lo reactiva). Averiado, en reparación y
-  con fallo piden escribir qué le pasa (mínimo 5 letras). El «fuera de servicio» de antes es ahora «averiado» (los que estaban fuera
+  listas; si alguien lo tenía se anota que lo deja; el historial se conserva; volver a operativo lo reactiva). **Razón del estado** (campo libre, 200 letras): obligatoria para
+  averiado, en reparación y con fallo (mínimo 5 letras, Centinela la necesita), opcional para operativo («qué se ha hecho») y baja. Se ve en el
+  cuadro y en la tarjeta, en el menú del estado (con quién y desde cuándo) y en el Historial (009). El «fuera de servicio» de antes es ahora «averiado» (los que estaban fuera
   pasaron a averiado).
 - **Sincronización con Centinela (008):** las pestañas **Dispositivos** y **Maquinaria** de Centinela son la fuente de las altas y de los
   estados, y Anubis es el puente (Supabase): Centinela manda su fotografía con `sync_centinela` y Anubis contesta con los cambios de estado
@@ -93,5 +99,5 @@ Los datos iniciales (personas y dispositivos) y la clave **no están en este rep
 - **Estadísticas (jefes):** dentro de Historial. Usos, horas, olvidos de más de 8 h, traspasos, paradas, quién y qué más se usa, lo que
   no se usa y las horas con más movimiento, a 7, 30 o 90 días.
 - **Sin cobertura:** coger, dejar, pasar y avisar se guardan en el aparato y se envían solos al volver la cobertura, con la hora real.
-  Lo que pide PIN no se aplaza. Si al enviarlo el servidor lo rechaza, sale un aviso con lo que no se pudo guardar.
+  Cambiar el estado y lo que pide PIN no se aplazan (necesitan conexión). Si al enviarlo el servidor lo rechaza, sale un aviso con lo que no se pudo guardar.
 - **Tema:** por defecto claro con el rojo Taisa; quien ya eligió otro tema lo conserva.
