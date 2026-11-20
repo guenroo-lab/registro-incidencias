@@ -32,9 +32,14 @@ navegador ──POST {clave, accion, args}──▶ función de borde «disposit
 - `sql/007_mejoras.sql` (requiere 001 y 003; re-ejecutable): fuera de servicio, traspaso directo («pasar»), estadísticas y hora real de los
   apuntes hechos sin conexión (`cuando`: hasta 2 días antes, nunca en el futuro ni antes del último movimiento; los reenvíos no
   duplican nada). `sql/007_deshacer.sql` la quita (vuelve a 001 + 003 y borra el registro de paradas).
+- `sql/008_sincronizacion_centinela.sql` (requiere 001, 003 y 007; re-ejecutable): estados (operativo · con fallo · averiado · en reparación ·
+  baja), la acción `cambiar_estado` (pulsación larga) y la sincronización con Centinela (`sync_centinela`, cola `cambios_estado`). Hay que
+  **volver a desplegar** `supabase/dispositivos.ts` (lleva las dos acciones nuevas). `sql/008_deshacer.sql` la quita (antes hay que volver a
+  ejecutar 007).
 - `sql/002_deshacer.sql`: lo quita todo (**borra** también el historial).
-- `pruebas/sql_pruebas.sql`, `pruebas/sql_pruebas_pin_avisos.sql` y `pruebas/sql_pruebas_mejoras.sql`: pruebas de la base de datos para un
-  Postgres local vacío (ver la cabecera de cada archivo).
+- `pruebas/sql_pruebas.sql`, `pruebas/sql_pruebas_pin_avisos.sql`, `pruebas/sql_pruebas_mejoras.sql` y `pruebas/sql_pruebas_centinela.sql`:
+  pruebas de la base de datos para un Postgres local vacío (ver la cabecera de cada archivo). `pruebas/ui_estados.js` prueba la web en
+  Chromium con la función simulada (`node dispositivos/pruebas/ui_estados.js`, necesita Playwright).
 - `manifest.webmanifest`, `sw.js` e `icono-*.png`: la web se puede instalar en el móvil y abre sin cobertura (el service worker guarda
   solo la propia web y las tipografías; las llamadas al servidor nunca pasan por él). Para obligar a recargar a todos, cambiar `VERSION` en `sw.js`.
 
@@ -42,7 +47,7 @@ Los datos iniciales (personas y dispositivos) y la clave **no están en este rep
 
 ## Poner en marcha / mover a otro proyecto de Supabase
 
-1. Ejecutar `sql/001_registro_dispositivos.sql`, `sql/003_pin_y_avisos.sql` y `sql/007_mejoras.sql` en el editor SQL del proyecto (si el editor
+1. Ejecutar `sql/001_registro_dispositivos.sql`, `sql/003_pin_y_avisos.sql`, `sql/007_mejoras.sql` y `sql/008_sincronizacion_centinela.sql` en el editor SQL del proyecto (si el editor
    corta textos largos, partirlos por funciones en trozos de unos 8.000 caracteres).
 2. Cargar las personas y los dispositivos iniciales (o dejarlas vacías y usar Ajustes → Importar lista).
 3. Fijar la clave inicial (guardada con hash):
@@ -64,8 +69,21 @@ Los datos iniciales (personas y dispositivos) y la clave **no están en este rep
   en el cuadro, en un banner de «Ahora» y al coger ese dispositivo. Los jefes los ven en Avisos y los marcan como resueltos.
 - **Mensajes:** al coger una máquina sale «Revisa el agua y el estado antes de coger la máquina»; al dejar un móvil o lector,
   «Asegúrate de dejar bien conectado el dispositivo en carga».
-- **Fuera de servicio:** un jefe (con el PIN) pone una máquina o dispositivo fuera de servicio con un motivo; nadie puede cogerlo ni
-  pasarlo hasta que un jefe lo vuelva a poner en servicio. Sale rayado en los cuadros, con una tarjeta de cuenta en «Ahora».
+- **Estados (008):** **pulsación larga** (0,6 s) sobre un cuadro, o «Cambiar estado» en su menú, abre las opciones de estado (pide el PIN de
+  jefes y quién eres). Máquinas: operativo · **con fallo** (se puede coger; al coger sale la nota del fallo) · **averiado** y **en reparación**
+  (NO se puede coger: sale un mensaje; cuadro rayado). Dispositivos: operativo · averiado · en reparación · **baja** (desaparece de las
+  listas; si alguien lo tenía se anota que lo deja; el historial se conserva; volver a operativo lo reactiva). Averiado, en reparación y
+  con fallo piden escribir qué le pasa (mínimo 5 letras). El «fuera de servicio» de antes es ahora «averiado» (los que estaban fuera
+  pasaron a averiado).
+- **Sincronización con Centinela (008):** las pestañas **Dispositivos** y **Maquinaria** de Centinela son la fuente de las altas y de los
+  estados, y Anubis es el puente (Supabase): Centinela manda su fotografía con `sync_centinela` y Anubis contesta con los cambios de estado
+  hechos aquí que Centinela aún no ha reflejado; Centinela los aplica y los confirma en la siguiente llamada. Mientras un cambio de Anubis
+  esté pendiente, lo que mande Centinela no lo pisa. Vinculación: por (origen, id) y, la primera vez, por número de serie (las máquinas
+  también por su «#N»). Las máquinas nuevas de Centinela se dan de alta solas; los **dispositivos nuevos NO** hasta que el jefe de área lo
+  active en Centinela (Quién tiene qué → Conexión), porque el «serie» de un móvil allí puede ser el IMEI y se duplicarían cuadros; los que no
+  se vinculan salen en el resumen como «sin vincular». Anubis no toca nunca quién tiene qué. La web de Anubis se refresca sola cada minuto, así que
+  un cambio de Centinela se ve en ≈ 1 min si alguien guarda o abre Centinela, o en hasta ≈ 6 min si no (activador de 5 min).
+- **Fuera de servicio (007):** sigue existiendo la acción por si queda una web antigua abierta; equivale a poner «averiado».
 - **Pasar a otra persona:** en un cuadro ocupado, «Pasar a otra persona» anota en un paso que quien lo tenía lo deja y que la otra
   persona lo recibe, con la misma hora.
 - **Cierre de turno:** en la última media hora de cada turno (mañana 14:00, tarde 22:00) y la siguiente sale una lista de lo que
