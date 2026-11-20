@@ -342,6 +342,23 @@ ol.pasos li{margin:0 0 6px}
 .cuadro-top .cuadro-fuera svg.i,.cuadro-top .cuadro-pend svg.i{width:13px;height:13px;vertical-align:-2px;opacity:1}
 .chip.fuera{background:var(--ink-700);color:var(--text-100)}
 .chip.pend{background:#2563eb;color:#fff}
+
+/* ——— estados (con fallo, averiado, en reparación, baja) y pulsación larga ——— */
+.cuadro{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.cuadro.fallo{border-color:var(--warn-line)}
+.cuadro-fallo{display:inline-flex;align-items:center;gap:4px;background:#f0a020;color:#241400;font-size:11px;font-weight:900;padding:2px 8px;border-radius:999px;letter-spacing:.02em}
+.cuadro-top .cuadro-fallo svg.i{width:13px;height:13px;vertical-align:-2px;opacity:1}
+.chip.fallo{background:#f0a020;color:#241400}
+.tarjeta.borde-fallo{border-left:4px solid #f0a020}
+.lista-estados{display:grid;gap:8px;margin:0 0 4px}
+.op-estado{display:flex;align-items:flex-start;gap:12px;width:100%;text-align:left;padding:12px 14px;border-radius:14px;border:2px solid var(--ink-600);background:var(--ink-850);color:var(--text-100);font-family:inherit;cursor:pointer;min-height:56px}
+.op-estado svg.i{width:24px;height:24px;flex:none;margin-top:1px}
+.op-estado b{display:block;font-size:16px;font-weight:900}
+.op-estado span{display:block;font-size:13px;color:var(--text-300);margin-top:2px}
+.op-estado.actual{border-color:var(--accent);background:var(--ink-800)}
+.op-estado.fallo svg.i{color:#f0a020}.op-estado.averiado svg.i,.op-estado.reparacion svg.i,.op-estado.baja svg.i{color:var(--danger-fg)}.op-estado.operativo svg.i{color:var(--ok)}
+.op-estado:active{transform:scale(.985)}
+.pista-largo{margin:14px 0 0;text-align:center;font-size:12.5px;color:var(--text-500)}
 .tarjeta.borde-fuera{border-left:4px solid var(--ink-600)}
 .barra .b-fuera{background:var(--ink-600)}
 .resumen.tres{grid-template-columns:1fr 1fr 1fr}
@@ -669,7 +686,7 @@ ol.pasos li{margin:0 0 6px}
 
   // ── PIN de jefes (la comprobación de verdad está en el servidor) ───────────
   var GATED = ['comprobar_pin', 'historial', 'exportar', 'avisos', 'resolver_aviso', 'guardar_dispositivo', 'archivar_dispositivo',
-    'importar_dispositivos', 'guardar_persona', 'archivar_persona', 'importar_personas', 'cambiar_clave', 'cambiar_pin', 'fuera_servicio', 'estadisticas'];
+    'importar_dispositivos', 'guardar_persona', 'archivar_persona', 'importar_personas', 'cambiar_clave', 'cambiar_pin', 'fuera_servicio', 'cambiar_estado', 'estadisticas'];
   var PIN_REPOSO_MS = 10 * 60 * 1000;
   function silencio(e) { return !!e && (e.message === '__acceso__' || e.message === '__pin__'); }
   function conPin() { return !!(S.est && S.est.con_pin); }
@@ -765,6 +782,34 @@ ol.pasos li{margin:0 0 6px}
     t2 = setTimeout(quitar, CARTEL_MS);
   }
 
+  // Pulsación larga (jefes): mantener pulsado un cuadro abre el menú de estados. El toque que llega al soltar el dedo no debe cerrar el
+  // menú recién abierto ni pulsar el cuadro de debajo.
+  var LARGA_MS = 600, SOLTANDO_LARGA = false;
+  function conPulsacionLarga(btn, alLargo) {
+    var timer = null, x0 = 0, y0 = 0, disparado = false;
+    function parar() { if (timer) { clearTimeout(timer); timer = null; } }
+    function soltar() {
+      document.removeEventListener('pointerup', soltar, true);
+      document.removeEventListener('pointercancel', soltar, true);
+      setTimeout(function () { SOLTANDO_LARGA = false; }, 450);
+    }
+    btn.addEventListener('pointerdown', function (ev) {
+      if (ev.button !== undefined && ev.button !== 0) return;
+      disparado = false; x0 = ev.clientX; y0 = ev.clientY; parar();
+      timer = setTimeout(function () {
+        timer = null; disparado = true; SOLTANDO_LARGA = true;
+        document.addEventListener('pointerup', soltar, true);
+        document.addEventListener('pointercancel', soltar, true);
+        try { if (navigator.vibrate) navigator.vibrate(25); } catch (e) {}
+        alLargo();
+      }, LARGA_MS);
+    });
+    ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (n) { btn.addEventListener(n, parar); });
+    btn.addEventListener('pointermove', function (ev) { if (timer && (Math.abs(ev.clientX - x0) > 10 || Math.abs(ev.clientY - y0) > 10)) parar(); });
+    btn.addEventListener('contextmenu', function (ev) { ev.preventDefault(); });
+    btn.addEventListener('click', function (ev) { if (disparado) { disparado = false; ev.stopImmediatePropagation(); ev.preventDefault(); } }, true);
+  }
+
   function abrirModal(o) {
     cerrarModal();
     var botones = (o.botones || []).map(function (b) {
@@ -780,7 +825,7 @@ ol.pasos li{margin:0 0 6px}
       h('div', { class: 'error-modal oculto', id: 'modalError', role: 'alert' }),
       botones.length ? h('div', { class: 'fila-botones' }, botones) : null
     ]);
-    var fondo = h('div', { class: 'kback', onmousedown: function (ev) { if (ev.target === fondo && !ctl.ocupado && !o.obligatorio) ctl.cerrar(); } }, [caja]);
+    var fondo = h('div', { class: 'kback', onmousedown: function (ev) { if (ev.target === fondo && !ctl.ocupado && !o.obligatorio && !SOLTANDO_LARGA) ctl.cerrar(); } }, [caja]);
     var previo = document.activeElement;
     var ctl = {
       el: caja, botones: o.botones || [], ocupado: false,
@@ -1042,6 +1087,7 @@ ol.pasos li{margin:0 0 6px}
     v.appendChild(h('div', { class: 'fila-cierre', id: 'cierreFila' }));
     v.appendChild(h('div', { class: 'fila-buscar' }, [buscador, conmutador]));
     v.appendChild(h('div', { id: 'lista' }));
+    v.appendChild(h('p', { class: 'pista-largo', text: 'Jefes: mantén pulsado un cuadro para cambiar su estado (con fallo, averiado, en reparación o baja).' }));
     v.appendChild(h('div', { id: 'instalar' }));
   }
 
@@ -1175,11 +1221,12 @@ ol.pasos li{margin:0 0 6px}
     var viejo = d.tiene && diaISO(desde) !== diaISO(ahora());
     var largo8 = !!d.tiene && !!desde && ahora() - desde >= LIMITE_MS;
     var fuera = !!d.fuera;
+    var fallo = d.estado === 'fallo' && !fuera;
     var m = /^(#\s*\d+)\s+(.+)$/.exec(d.nombre);
     var grande = m ? m[1].replace(/\s+/g, '') : d.nombre, chico = m ? m[2] : (d.serie || '');
     var pie;
     if (fuera) {
-      pie = [h('span', { class: 'cuadro-estado' }, [ic('ban'), 'FUERA DE SERVICIO']),
+      pie = [h('span', { class: 'cuadro-estado' }, [ic('ban'), etiquetaFuera(d)]),
              h('span', { class: 'cuadro-desde', text: d.tiene ? 'Lo tiene ' + d.tiene : (d.fuera_motivo || '') })];
     } else if (!d.tiene) {
       pie = [h('span', { class: 'cuadro-estado' }, [ic('check'), 'LIBRE'])];
@@ -1187,18 +1234,21 @@ ol.pasos li{margin:0 0 6px}
       pie = [h('span', { class: 'cuadro-quien', text: d.tiene }),
              h('span', { class: 'cuadro-desde' }, [viejo ? ic('alerta') : null, (viejo ? ' ' : '') + (largo8 ? 'lleva ' + duracion(ahora() - desde) : 'desde ' + cuando(desde))])];
     }
-    return h('button', {
-      type: 'button', class: 'cuadro ' + (fuera ? 'fuera' : !d.tiene ? 'libre' : largo8 ? 'exceso' : viejo ? 'viejo' : 'uso'),
-      'aria-label': d.nombre + ', ' + (fuera ? 'fuera de servicio' + (d.fuera_motivo ? ': ' + d.fuera_motivo : '') + (d.tiene ? ', lo tiene ' + d.tiene : '') : d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre')
-        + (largo8 ? ', lleva más de ' + LIMITE_H + ' horas' : '') + (avs.length ? ', con aviso' : '') + (d.pendiente ? ', apunte sin enviar' : ''),
+    var btn = h('button', {
+      type: 'button', class: 'cuadro ' + (fuera ? 'fuera' : !d.tiene ? 'libre' : largo8 ? 'exceso' : viejo ? 'viejo' : 'uso') + (fallo ? ' fallo' : ''),
+      'aria-label': d.nombre + ', ' + (fuera ? textoEstadoFuera(d) + (d.fuera_motivo ? ': ' + d.fuera_motivo : '') + (d.tiene ? ', lo tiene ' + d.tiene : '') : d.tiene ? 'ocupado por ' + d.tiene + ' desde ' + cuando(desde) : 'libre')
+        + (fallo ? ', con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') : '') + (largo8 ? ', lleva más de ' + LIMITE_H + ' horas' : '') + (avs.length ? ', con aviso' : '') + (d.pendiente ? ', apunte sin enviar' : ''),
       onclick: function () { if (d.fuera) menuFuera(d); else if (d.tiene) menuDispositivo(d); else accionCoger(d); }
     }, [
       h('div', { class: 'cuadro-top' }, [ic(ICONO_GRUPO[d.grupo]), largo8 ? h('span', { class: 'cuadro-exceso' }, [ic('reloj'), '+' + LIMITE_H + ' h']) : null,
         d.pendiente ? h('span', { class: 'cuadro-pend', title: 'Apunte sin enviar' }, [ic('sinred')]) : null,
+        fallo ? h('span', { class: 'cuadro-fallo', title: 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') }, [ic('alerta'), 'FALLO']) : null,
         avs.length ? h('span', { class: 'cuadro-aviso', title: 'Con aviso' }, [ic('alerta')]) : null]),
       h('div', { class: 'cuadro-medio' }, [h('div', { class: 'cuadro-num' + (m ? '' : ' largo'), text: grande }), chico ? h('div', { class: 'cuadro-nom', text: chico }) : null]),
       h('div', { class: 'cuadro-pie' }, pie)
     ]);
+    conPulsacionLarga(btn, function () { menuEstado(d); });
+    return btn;
   }
 
   function textoAviso(a) { return 'Aviso de ' + a.por + ' (' + cuando(new Date(a.ts).getTime()) + '): ' + a.texto; }
@@ -1210,7 +1260,7 @@ ol.pasos li{margin:0 0 6px}
       { texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } },
       { texto: 'Avisar de un problema', clase: 'borde', icono: 'alerta', accion: function (m) { m.cerrar(); accionAvisar(d); } }
     ];
-    if (desbloqueado()) botones.push({ texto: 'Fuera de servicio', clase: 'borde', icono: 'ban', accion: function (m) { m.cerrar(); accionFuera(d); } });
+    if (desbloqueado()) botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
     botones.push(
       { texto: 'Cogerlo yo', clase: 'borde', icono: 'mano', accion: function (m) { m.cerrar(); accionCoger(d); } },
       { texto: 'Pasar a otra persona', clase: 'borde', icono: 'cambio', accion: function (m) { m.cerrar(); accionPasar(d); } },
@@ -1219,6 +1269,7 @@ ol.pasos li{margin:0 0 6px}
     abrirModal({
       titulo: d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : ''),
       cuerpo: h('div', null, [h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(desde) + ' (' + duracion(ahora() - desde) + ').' })]
+        .concat(d.estado === 'fallo' ? [h('div', { class: 'aviso-modal', text: 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') + '.' })] : [])
         .concat(avisosDe(d).slice(0, 3).map(function (a) { return h('div', { class: 'aviso-modal', text: textoAviso(a) }); }))),
       botones: botones
     });
@@ -1231,9 +1282,13 @@ ol.pasos li{margin:0 0 6px}
       { texto: 'Avisar de un problema', clase: 'borde', icono: 'alerta', accion: function (m) { m.cerrar(); accionAvisar(d); } }
     ];
     if (d.tiene) botones.push({ texto: 'Dejar', clase: desbloqueado() ? 'borde' : '', icono: 'devolver', accion: function (m) { m.cerrar(); accionDejar(d); } });
-    if (desbloqueado()) botones.push({ texto: 'Volver a ponerlo en servicio', icono: 'check', accion: function (m) { m.cerrar(); accionEnServicio(d); } });
-    var cuerpo = [h('div', { class: 'aviso-modal', text: 'Fuera de servicio' + (d.fuera_desde ? ' desde ' + cuando(new Date(d.fuera_desde).getTime()) : '') + ': ' + (d.fuera_motivo || 'sin motivo')
-      + '. No se puede coger hasta que un jefe lo vuelva a poner en servicio.' })];
+    if (desbloqueado()) {
+      botones.push({ texto: 'Cambiar estado', clase: 'borde', icono: 'llave', accion: function (m) { m.cerrar(); menuEstado(d); } });
+      botones.push({ texto: 'Volver a ponerlo en servicio', icono: 'check', accion: function (m) { m.cerrar(); accionEnServicio(d); } });
+    }
+    var cuerpo = [h('div', { class: 'aviso-modal', text: mayuscula1(textoEstadoFuera(d)) + (d.fuera_desde ? ' desde ' + cuando(new Date(d.fuera_desde).getTime()) : '') + ': ' + (d.fuera_motivo || 'sin motivo')
+      + '. No se puede coger hasta que un jefe lo vuelva a poner operativo.' })];
+    if (d.pendiente_cs) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Pendiente de reflejar en Centinela: se actualiza solo en unos minutos.' }));
     if (d.tiene) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(new Date(d.desde).getTime()) + '.' }));
     avisosDe(d).slice(0, 3).forEach(function (a) { cuerpo.push(h('div', { class: 'aviso-modal', text: textoAviso(a) })); });
     abrirModal({ titulo: d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : ''), cuerpo: h('div', null, cuerpo), botones: botones });
@@ -1248,8 +1303,9 @@ ol.pasos li{margin:0 0 6px}
     var clase = 'tarjeta ' + (fuera ? 'borde-fuera' : !d.tiene ? 'borde-ok' : largo8 ? 'borde-mal' : viejo ? 'borde-aviso' : 'borde-acento');
     var meta = [h('span', { class: 'meta' }, [ic(ICONO_GRUPO[d.grupo]), ' ' + d.grupo + (d.serie ? ' · ' + d.serie : '')])];
     var estado;
+    if (d.estado === 'fallo' && !fuera) meta.push(h('span', { class: 'chip fallo' }, [ic('alerta'), 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '')]));
     if (fuera) {
-      estado = h('div', { class: 'estado-linea' }, [h('span', { class: 'chip fuera' }, [ic('ban'), 'Fuera de servicio']),
+      estado = h('div', { class: 'estado-linea' }, [h('span', { class: 'chip fuera' }, [ic('ban'), mayuscula1(textoEstadoFuera(d))]),
         h('span', { text: (d.fuera_motivo || 'sin motivo') + (d.tiene ? ' · lo tiene ' + d.tiene : '') })]);
     } else if (!d.tiene) {
       estado = h('div', { class: 'estado-linea' }, [h('span', { class: 'chip ok' }, [ic('check'), 'Libre'])]);
@@ -1272,8 +1328,8 @@ ol.pasos li{margin:0 0 6px}
                    h('button', { type: 'button', class: 'btn borde', onclick: function () { accionCoger(d); } }, [ic('mano'), 'Cogerlo yo']));
     }
     botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Avisar de un problema de ' + d.nombre, onclick: function () { accionAvisar(d); } }, [ic('alerta'), 'Avisar']));
-    if (!fuera && desbloqueado()) {
-      botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Poner ' + d.nombre + ' fuera de servicio', onclick: function () { accionFuera(d); } }, [ic('ban'), 'Fuera de servicio']));
+    if (desbloqueado()) {
+      botones.push(h('button', { type: 'button', class: 'btn mini borde', 'aria-label': 'Cambiar el estado de ' + d.nombre, onclick: function () { menuEstado(d); } }, [ic('llave'), 'Estado']));
     }
     return h('div', { class: clase }, [
       h('div', { class: 'tarjeta-cabecera' }, [h('div', { class: 'nombre', text: d.nombre }), d.pendiente ? h('span', { class: 'chip pend' }, [ic('sinred'), 'Sin enviar']) : null]),
@@ -1385,6 +1441,7 @@ ol.pasos li{margin:0 0 6px}
     if (d.fuera) { menuFuera(d); return; }
     var desde = d.desde ? new Date(d.desde).getTime() : 0;
     var avisos = [];
+    if (d.estado === 'fallo') avisos.push({ texto: 'Con fallo' + (d.estado_nota ? ': ' + d.estado_nota : '') + '. Se puede usar, pero avisa si empeora.', clase: 'aviso' });
     if (d.grupo === 'Máquina') avisos.push({ texto: 'Revisa el agua y el estado antes de coger la máquina.', clase: 'aviso' });
     avisosDe(d).slice(0, 3).forEach(function (a) { avisos.push({ texto: textoAviso(a), clase: 'aviso' }); });
     elegirPersona({
@@ -1462,6 +1519,57 @@ ol.pasos li{margin:0 0 6px}
       notaEtiqueta: 'Qué se ha hecho', notaPlaceholder: 'Opcional: cambiadas las pastillas, revisado por el SAT…',
       enviar: function (p, nota) { return llamar('fuera_servicio', { dispositivo_id: d.id, persona: p, fuera: false, motivo: nota }); },
       hecho: function () { return d.nombre + ' vuelve a estar en servicio'; }
+    });
+  }
+
+  // ── Estados: operativo, con fallo, averiado, en reparación y baja (se reflejan también en Centinela) ──
+  var ESTADOS = {
+    operativo:  { nombre: 'Operativo',     icono: 'check',    texto: 'Funciona bien. Se puede coger.' },
+    fallo:      { nombre: 'Con fallo',     icono: 'alerta',   texto: 'Tiene un fallo leve. Se puede coger, pero sale un aviso.' },
+    averiado:   { nombre: 'Averiado',      icono: 'ban',      texto: 'Está averiado. No se puede coger hasta que vuelva a estar operativo.' },
+    reparacion: { nombre: 'En reparación', icono: 'llave',    texto: 'Se está arreglando o revisando. No se puede coger.' },
+    baja:       { nombre: 'Baja',          icono: 'papelera', texto: 'Ya no se usa: desaparece de las listas (el historial se conserva).' }
+  };
+  function estadoDe(d) { return d.estado || (d.fuera ? 'averiado' : 'operativo'); }
+  function estadosDe(d) { return d.grupo === 'Máquina' ? ['operativo', 'fallo', 'averiado', 'reparacion'] : ['operativo', 'averiado', 'reparacion', 'baja']; }
+  function mayuscula1(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+  function textoEstadoFuera(d) { return d.estado === 'averiado' ? 'averiado' : d.estado === 'reparacion' ? 'en reparación' : 'fuera de servicio'; }
+  function etiquetaFuera(d) { return d.estado === 'averiado' ? 'AVERIADO' : d.estado === 'reparacion' ? 'EN REPARACIÓN' : 'FUERA DE SERVICIO'; }
+
+  // pulsación larga sobre un cuadro (o el botón «Estado»): elegir el nuevo estado. Pide el PIN de jefes.
+  function menuEstado(d) {
+    if (!desbloqueado()) { S.pin = null; pedirPin(function () { menuEstado(d); }); return; }
+    var actual = estadoDe(d);
+    var lista = h('div', { class: 'lista-estados', role: 'group', 'aria-label': 'Estado de ' + d.nombre }, estadosDe(d).map(function (e) {
+      var inf = ESTADOS[e];
+      return h('button', { type: 'button', class: 'op-estado ' + e + (e === actual ? ' actual' : ''), 'aria-pressed': e === actual ? 'true' : 'false',
+        disabled: e === 'operativo' && actual === 'operativo',
+        onclick: function () { cerrarModal(); accionEstado(d, e); } },
+        [ic(inf.icono), h('div', null, [h('b', { text: inf.nombre + (e === actual ? ' · ahora' : '') }), h('span', { text: inf.texto })])]);
+    }));
+    var cuerpo = [];
+    if (actual !== 'operativo' && d.estado_nota) cuerpo.push(h('div', { class: 'aviso-modal', text: ESTADOS[actual].nombre + (d.estado_desde ? ' desde ' + cuando(new Date(d.estado_desde).getTime()) : '') + ': ' + d.estado_nota }));
+    if (d.tiene) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Lo tiene ' + d.tiene + ' desde ' + cuando(new Date(d.desde).getTime()) + '.' }));
+    if (d.pendiente_cs) cuerpo.push(h('div', { class: 'aviso-modal info', text: 'Pendiente de reflejar en Centinela: se actualiza solo en unos minutos.' }));
+    cuerpo.push(lista);
+    abrirModal({
+      titulo: 'Estado de ' + d.nombre, sub: d.grupo + (d.serie ? ' · ' + d.serie : '') + (d.enlazado ? ' · se refleja en Centinela' : ''),
+      cuerpo: h('div', null, cuerpo), botones: [{ texto: 'Cerrar', clase: 'borde', accion: function (m) { m.cerrar(); } }]
+    });
+  }
+
+  function accionEstado(d, e) {
+    var inf = ESTADOS[e];
+    var pideNota = e === 'fallo' || e === 'averiado' || e === 'reparacion';
+    elegirPersona({
+      titulo: e === 'operativo' ? 'Volver a ponerlo operativo' : 'Marcar «' + inf.nombre + '»', sub: d.nombre, icono: inf.icono, pre: S.yo,
+      aviso: inf.texto + (d.tiene && e === 'baja' ? ' Lo tiene ' + d.tiene + ': se anotará que lo deja.' : '') + (d.enlazado ? ' Se refleja también en Centinela.' : ''), avisoClase: 'info',
+      boton: function (p) { return inf.nombre + ' (lo marca ' + p + ')'; },
+      notaEtiqueta: e === 'operativo' ? 'Qué se ha hecho' : pideNota ? 'Qué le pasa' : 'Motivo',
+      notaPlaceholder: e === 'operativo' ? 'Opcional: cambiadas las pastillas, revisado por el SAT…' : pideNota ? 'Ej.: frena mal, pantalla rota, esperando al SAT…' : 'Opcional: obsoleto, perdido…',
+      notaObligatoria: pideNota,
+      enviar: function (p, nota) { return llamar('cambiar_estado', { dispositivo_id: d.id, persona: p, estado: e, nota: nota }); },
+      hecho: function (p, r) { return (r && r.ya) ? d.nombre + ' ya estaba así' : d.nombre + ': ' + inf.nombre.toLowerCase() + (d.enlazado ? ' · Centinela se actualiza solo' : ''); }
     });
   }
 

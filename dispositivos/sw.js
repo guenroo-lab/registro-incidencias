@@ -2,7 +2,7 @@
 // Solo guarda la propia web (para abrirla sin cobertura) y las tipografías. NUNCA toca las llamadas al servidor
 // (POST a la función de borde): esas van siempre a la red, y la propia web decide qué hacer si no hay cobertura.
 // Para forzar que todos recarguen la web, cambia VERSION.
-var VERSION = 'rd-v2';
+var VERSION = 'rd-v3';
 var SHELL = 'rd-shell-' + VERSION;
 var FUENTES = 'rd-fuentes-' + VERSION;
 var ARCHIVOS = ['./', 'manifest.webmanifest', 'icono-192.png', 'icono-512.png', 'icono-180.png'];
